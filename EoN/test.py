@@ -14,26 +14,37 @@ parameters = [{"degree-distribution":"uniform","min-degree":4,"max-degree":6,"hy
 # G = Hypergraph.Hypergraph(h.getHyperedgeList())
 # print(time.time() - start)
 
-start = time.time()
-hDev = Hypergraph.HypergraphGeneratorDev(parameters)
-GDev = Hypergraph.HypergraphDev(hDev.getHyperedges(), weightedEdges=True, nodeWeights=0.1*np.ones(1000))
-print(time.time() - start)
+h = Hypergraph.HypergraphGenerator(parameters)
+G = Hypergraph.Hypergraph(h.getHyperedges(), weightedEdges=True, nodeWeights=np.ones(n)+np.random.rand(n))
 initial_size = 10
-gamma = 1.
-tau = {2:0.6,10:0.2}
-# start = time.time()
-# t, S, I = simulation.Gillespie_SIS(G, tau, gamma, mechanism="collective", tmax = 200, initial_infecteds = range(initial_size))
-# print(time.time() - start)
+gamma = 0.2
+tau = {2:0.7,10:0.1}
 
-start = time.time()
-#t, S, I = simulation.Gillespie_SIS(GDev, tau, gamma, tmax = 100, initial_infecteds = range(initial_size))
-print(time.time() - start)
+t1, S1, I1, R1 = simulation.discrete_SIR(G, tau, gamma, tmin=0, tmax=1000, transmission_weight="weight", recovery_weight="weight", dt=0.1, initial_infecteds = range(initial_size))
 
-t, S, I, R = simulation.Gillespie_SIR(GDev, tau, gamma, tmax = 1000, initial_infecteds = range(initial_size), recovery_weight="weight", transmission_weight="weight")
+t, S, I, R = simulation.Gillespie_SIR(G, tau, gamma, tmin=0, tmax = 1000, initial_infecteds = range(initial_size), recovery_weight="weight", transmission_weight="weight")
 plt.figure()
-#plt.plot(t, S/n)
-plt.plot(t, I)
-#plt.plot(t, R/n)
+plt.plot(t, S/n, label="S (continuous)")
+plt.plot(t, I/n, label="I (continuous)")
+plt.plot(t, R/n, label="R (continuous)")
+plt.plot(t1, S1/n, label="S (discrete)")
+plt.plot(t1, I1/n, label="I (discrete)")
+plt.plot(t1, R1/n, label="R (discrete)")
+plt.legend()
+plt.xlabel('time')
+plt.ylabel('Fraction infected')
+plt.show()
+
+
+t1, S1, I1 = simulation.discrete_SIS(G, tau, gamma, tmin=0, tmax=1000, transmission_weight="weight", recovery_weight="weight", dt=0.1, initial_infecteds = range(initial_size))
+t, S, I = simulation.Gillespie_SIS(G, tau, gamma, tmin=0, tmax = 1000, transmission_weight="weight", recovery_weight="weight", initial_infecteds = range(initial_size))
+
+plt.figure()
+plt.plot(t, S/n, label="S (continuous)")
+plt.plot(t, I/n, label="I (continuous)")
+plt.plot(t1, S1/n, label="S (discrete)")
+plt.plot(t1, I1/n, label="I (discrete)")
+plt.legend()
 plt.xlabel('time')
 plt.ylabel('Fraction infected')
 plt.show()
