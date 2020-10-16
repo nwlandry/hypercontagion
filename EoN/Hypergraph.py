@@ -1,5 +1,6 @@
 import random
 import time
+from collections import defaultdict
 
 class Hypergraph:
     def __init__(self, hyperedges, weightedEdges=False, nodeWeights=None):
@@ -116,25 +117,32 @@ class Hypergraph:
 
     def generateUnweightedNeighbors(self):
         for uid, edgeData in self.hyperedges.items():
-            for index in range(len(edgeData["members"])):
+            try:
+                members = edgeData["members"]
+            except:
+                print("Incorrect input format for hyperedge list")
+                break
+            for index in range(len(members)):
                 try:
-                    self.neighbors[edgeData["members"][index]][uid] = {"neighbors":tuple([edgeData["members"][i] for i in range(len(edgeData["members"])) if i != index])}
+                    self.neighbors[members[index]][uid] = {"neighbors":tuple([members[i] for i in range(len(members)) if i != index])}
                 except:
-                    self.neighbors[edgeData["members"][index]] = {uid:{"neighbors":tuple([edgeData["members"][i] for i in range(len(edgeData["members"])) if i != index])}}
+                    self.neighbors[members[index]] = {uid:{"neighbors":tuple([members[i] for i in range(len(members)) if i != index])}}
 
     def generateWeightedNeighbors(self):
-        for uid, item in self.hyperedges.items():
+        print(self.hyperedges)
+        for uid, edgeData in self.hyperedges.items():
             try:
-                hyperedge = item["members"]
-                weight = item["weight"]
+                members = edgeData["members"]
+                weight = edgeData["weight"]
             except:
                 print("Incorrect input format for weighted hyperedge list")
                 break
-            for index in range(len(hyperedge)):
+            for index in range(len(members)):
                 try:
-                    self.neighbors[hyperedge[index]][uid] = {"neighbors":tuple([hyperedge[i] for i in range(len(hyperedge)) if i != index]), "weight":weight}
+                    print(members[index])
+                    self.neighbors[members[index]][uid] = {"neighbors":tuple([members[i] for i in range(len(members)) if i != index]), "weight":weight}
                 except:
-                    self.neighbors[hyperedge[index]] = {uid:{"neighbors":tuple([hyperedge[i] for i in range(len(hyperedge)) if i != index]), "weight":weight}}
+                    self.neighbors[members[index]] = {uid:{"neighbors":tuple([members[i] for i in range(len(members)) if i != index]), "weight":weight}}
 
 class HypergraphGenerator:
     def __init__(self, structure):
@@ -154,7 +162,7 @@ class HypergraphGenerator:
             try:
                 hyperedgeSize = info["hyperedge-size"]
             except:
-                print("Error in specified parameters")
+                print("Error in specified distribution parameters")
 
             if info["degree-distribution"] == "power-law":
                 try:
@@ -163,7 +171,7 @@ class HypergraphGenerator:
                     maxDegree = info["max-degree"]
                     exponent = info["exponent"]
                 except:
-                    print("Error in specified parameters")
+                    print("Error in specified distribution parameters")
                     break
                 sequence = self.generatePowerLawDegreeSequence(numNodes, minDegree, maxDegree, exponent)
             elif info["degree-distribution"] == "uniform":
@@ -172,7 +180,7 @@ class HypergraphGenerator:
                     minDegree = info["min-degree"]
                     maxDegree = info["max-degree"]
                 except:
-                    print("Error in specified parameters")
+                    print("Error in specified distribution parameters")
                     break
                 sequence = self.generateUniformDegreeSequence(numNodes, minDegree, maxDegree)
             elif info["degree-distribution"] == "poisson":
@@ -180,7 +188,7 @@ class HypergraphGenerator:
                     numNodes = info["size"]
                     meanDegree = info["mean-degree"]
                 except:
-                    print("Error in specified parameters")
+                    print("Error in specified distribution parameters")
                     break
                 sequence = self.generatePoissonDegreeSequence(numNodes, meanDegree)
             else:
@@ -189,7 +197,7 @@ class HypergraphGenerator:
             try:
                 isCorrelated = info["is-correlated"]
             except:
-                print("Specify whether this layer is correlated or not")
+                print("Specify whether this hyperedge size is correlated or not")
                 break
             if isCorrelated:
                 if correlatedSequence == []:

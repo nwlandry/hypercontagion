@@ -1903,7 +1903,7 @@ def Gillespie_SIR(G, tau, gamma, initial_infecteds=None,
 
             for uid, nbrData in G.neighbors[recovering_node].items():
                 for nbr in nbrData["neighbors"]:
-                    if status[nbr] == 'S':
+                    if status[nbr] == 'S' and (G.neighbors[nbr][uid]["neighbors"], nbr) in IS_links[len(nbrData["neighbors"])+1]:
                         contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
                         if contagion == 0:
                             try:
@@ -2172,12 +2172,11 @@ def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=
                     contagion =  contagionMechanism(status, nbrData["neighbors"], mechanism="collective")
                     if contagion != 0:
                         IS_links[len(nbrData["neighbors"])+1].update((nbrData["neighbors"], recovering_node), weight_increment = edgeweight(nbrData))
-                        #IS_links[len(nbrData["neighbors"])+1].insert((tuple(sorted(nbrData["neighbors"])), recovering_node), weight = edgeweight(nbrData)) # multiply by contagion?
 
             # reduce the number of infected links because of the healing
             for uid, nbrData in G.neighbors[recovering_node].items():
                 for nbr in nbrData["neighbors"]:
-                    if status[nbr] == 'S':
+                    if status[nbr] == 'S' and (G.neighbors[nbr][uid]["neighbors"], nbr) in IS_links[len(nbrData["neighbors"])+1]: # if the key doesn't exist, don't attempt to remove it
                         contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
                         if contagion == 0:
                             try:
