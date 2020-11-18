@@ -12,24 +12,39 @@ from collections import Counter
 #                     #
 #######################
 
-def contagionMechanism(status, neighbors, mechanism="collective"):
-    if mechanism == "collective":
-        for i in neighbors:
-            if status[i] != 'I':
-                return 0
+# built-in functions
+def collective_contagion(status, neighbors):
+    for i in neighbors:
+        if status[i] != 'I':
+            return 0
+    return 1
+
+def individual_contagion(status, neighbors):
+    for i in neighbors:
+        if status[i] == 'I':
+            return 1
+    return 0
+
+def threshold(status, neighbors, threshold=0.5):
+    meanContagion = sum([status[i] == 'I' for i in neighbors])/len(neighbors)
+    if meanContagion < threshold:
+        return 0
+    elif meanContagion >= threshold:
         return 1
-    elif mechanism == "collective-2":
-        return np.prod([status[i] == 'I' for i in neighbors])
-    elif mechanism == "individual":
-        return max([status[i] == 'I' for i in neighbors])
-    elif mechanism == "majority-vote":
-        epsilon = 1e-5
-        return round((sum([status[i] == 'I' for i in neighbors])+epsilon)/len(neighbors))
-    elif mechanism == "size-dependent":
-        return sum([status[i] == 'I' for i in neighbors])
+
+def majority_vote(status, neighbors):
+    meanContagion = sum([status[i] == 'I' for i in neighbors])/len(neighbors)
+    if meanContagion < 0.5:
+        return 0
+    elif meanContagion > 0.5:
+        return 1
     else:
-        print("invalid choice")
-        return []
+        return random.choice([0, 1])
+
+def size_dependent(status, neighbors):
+    return sum([status[i] == 'I' for i in neighbors])
+
+# distribution function
 
 def _truncated_exponential_(rate, T):
     r'''returns a number between 0 and T from an
@@ -37,6 +52,8 @@ def _truncated_exponential_(rate, T):
     t = random.expovariate(rate)
     L = int(t/T)
     return t - L*T
+
+# Classes for the simulations
 
 class myQueue(object):
     r'''
@@ -239,43 +256,6 @@ class _ListDict_(object):
     def update_total_weight(self):
         self._total_weight = sum(self.weight[item] for item in self.items)
 
-def _transform_to_node_history_(infection_times, recovery_times, tmin, SIR = True):
-    r'''The original (v0.96 and earlier) returned infection_times and recovery_times.
-    The new version returns node_history instead. This code transforms
-    the former to the latter.
-
-    It is only used for the continuous time cases.
-    '''
-    if SIR:
-        node_history = defaultdict(lambda : ([tmin], ['S']))
-        for node, time in infection_times.items():
-            if time == tmin:
-                node_history[node] = ([], [])
-            node_history[node][0].append(time)
-            node_history[node][1].append('I')
-        for node, time in recovery_times.items():
-            if time == tmin:
-                node_history[node] = ([], [])
-            node_history[node][0].append(time)
-            node_history[node][1].append('R')
-    else:
-        node_history = defaultdict(lambda : ([tmin], ['S']))
-        for node, Itimes in infection_times.items():
-            Rtimes = recovery_times[node]
-            while Itimes:
-                time = Itimes.pop(0)
-                if time == tmin:
-                    node_history[node] = ([], [])
-                node_history[node][0].append(time)
-                node_history[node][1].append('I')
-                if Rtimes:
-                    time = Rtimes.pop(0)
-                    node_history[node][0].append(time)
-                    node_history[node][1].append('S')
-
-    return node_history
-
-
 ##########################
 #                        #
 #    SIMULATION CODE     #
@@ -287,37 +267,7 @@ def _transform_to_node_history_(infection_times, recovery_times, tmin, SIR = Tru
     epidemics on networks
 '''
 
-def _constant_transmission_(u, v, p):
-    r'''
-    A simple test for whether u transmits to v assuming constant probability p
-
-    From figure 6.8 of Kiss, Miller, & Simon.  Please cite the book if
-    using this test_transmission function for basic_discrete_SIR.
-
-    This handles the simple case where transmission occurs with
-    probability p.
-
-    :Arguments:
-
-        u (node)
-            the infected node
-        v : node
-            the susceptible node
-        p : number between 0 and 1
-            the transmission probability
-
-    :Returns:
-
-
-
-            True if u will infect v (given opportunity)
-            False otherwise
-    '''
-
-    return random.random()<p
-
-
-def discrete_SIS(G, tau, gamma, initial_infecteds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False):
+def discrete_SIS(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False, **args):
 
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
@@ -385,7 +335,7 @@ def discrete_SIS(G, tau, gamma, initial_infecteds=None, recovery_weight=None, tr
                 # infect by neighbors of all sizes
                 for uid, nbrs in G.neighbors[node].items():
                     if tau[len(nbrs["neighbors"])+1] != 0:
-                        if random.random() <= tau[len(nbrs["neighbors"])+1]*contagionMechanism(status, nbrs["neighbors"], mechanism="collective")*dt*edgeweight(nbrs):
+                        if random.random() <= tau[len(nbrs["neighbors"])+1]*transmission_function(status, nbrs["neighbors"], **args)*dt*edgeweight(nbrs):
                             #print("index is " + str(index))
                             newStatus[node] = "I"
                             S[-1] += -1
@@ -402,7 +352,7 @@ def discrete_SIS(G, tau, gamma, initial_infecteds=None, recovery_weight=None, tr
 
     return np.array(times), np.array(S), np.array(I)
 
-def discrete_SIR(G, tau, gamma, initial_infecteds=None, initial_recovereds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False):
+def discrete_SIR(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, initial_recovereds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False, **args):
 
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
@@ -479,8 +429,7 @@ def discrete_SIR(G, tau, gamma, initial_infecteds=None, initial_recovereds=None,
                 # infect by neighbors of all sizes
                 for uid, nbrs in G.neighbors[node].items():
                     if tau[len(nbrs["neighbors"])+1] != 0:
-                        if random.random() <= tau[len(nbrs["neighbors"])+1]*contagionMechanism(status, nbrs["neighbors"], mechanism="collective")*dt*edgeweight(nbrs):
-                            #print("index is " + str(index))
+                        if random.random() <= tau[len(nbrs["neighbors"])+1]*transmission_function(status, nbrs["neighbors"], **args)*dt*edgeweight(nbrs):
                             newStatus[node] = "I"
                             S[-1] += -1
                             I[-1] += 1
@@ -1680,10 +1629,7 @@ def fast_nonMarkov_SIS(G, trans_time_fxn=None, rec_time_fxn=None,
         return EoN.Simulation_Investigation(G, node_history, transmissions, possible_statuses = ['S', 'I'], **sim_kwargs)
 
 
-def Gillespie_SIR(G, tau, gamma, initial_infecteds=None,
-                    initial_recovereds = None, rho = None, tmin = 0,
-                    tmax=float('Inf'), recovery_weight = None,
-                    transmission_weight = None, return_full_data = False, sim_kwargs = None):
+def Gillespie_SIR(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, initial_recovereds = None, rho = None, tmin = 0, tmax=float('Inf'), recovery_weight = None, transmission_weight = None, return_full_data = False, **args):
     #tested in test_SIR_dynamics
     r'''
 
@@ -1876,7 +1822,7 @@ def Gillespie_SIR(G, tau, gamma, initial_infecteds=None,
         # handle weighted vs. unweighted?
             for nbr in nbrData["neighbors"]: # there may be self-loops so account for this later
                 if status[nbr] == 'S':
-                    contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
+                    contagion = transmission_function(status, G.neighbors[nbr][uid]["neighbors"], **args)
                     if contagion != 0:
                         IS_links[len(nbrData["neighbors"])+1].update((G.neighbors[nbr][uid]["neighbors"], nbr), weight_increment=edgeweight(nbrData)) # need to be able to multiply by the contagion?
 
@@ -1904,7 +1850,7 @@ def Gillespie_SIR(G, tau, gamma, initial_infecteds=None,
             for uid, nbrData in G.neighbors[recovering_node].items():
                 for nbr in nbrData["neighbors"]:
                     if status[nbr] == 'S' and (G.neighbors[nbr][uid]["neighbors"], nbr) in IS_links[len(nbrData["neighbors"])+1]:
-                        contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
+                        contagion = transmission_function(status, G.neighbors[nbr][uid]["neighbors"], **args)
                         if contagion == 0:
                             try:
                                 IS_links[len(nbrData["neighbors"])+1].remove((G.neighbors[nbr][uid]["neighbors"], nbr))
@@ -1926,18 +1872,18 @@ def Gillespie_SIR(G, tau, gamma, initial_infecteds=None,
 
             for uid, nbrData in G.neighbors[recipient].items():
                 # this won't ever be true with the new data structure (nbr is a list)
-                if recipient in set(nbrData["neighbors"]):  #move past self edges
-                    continue
-                else:
-                    try:
-                        IS_links[len(nbrData["neighbors"])+1].remove((nbrData["neighbors"], recipient)) # multiply by contagion?
-                    except:
-                        pass
+                # if recipient in set(nbrData["neighbors"]):  #move past self edges
+                #     continue
+                # else:
+                try:
+                    IS_links[len(nbrData["neighbors"])+1].remove((nbrData["neighbors"], recipient)) # multiply by contagion?
+                except:
+                    pass
 
             for uid, nbrData in G.neighbors[recipient].items():
                 for nbr in nbrData["neighbors"]:
                     if status[nbr] == 'S':
-                        contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
+                        contagion = transmission_function(status, G.neighbors[nbr][uid]["neighbors"], **args)
                         if contagion != 0:
                             IS_links[len(nbrData["neighbors"])+1].update((G.neighbors[nbr][uid]["neighbors"], nbr), weight_increment = edgeweight(nbrData))
 
@@ -1973,7 +1919,7 @@ def Gillespie_SIR(G, tau, gamma, initial_infecteds=None,
             sim_kwargs = {}
         return EoN.Simulation_Investigation(G, node_history, transmissions, possible_statuses = ['S', 'I', 'R'], **sim_kwargs)
 
-def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=100, recovery_weight=None, transmission_weight=None, return_full_data=False, sim_kwargs=None):
+def Gillespie_SIS(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, rho=None, tmin=0, tmax=100, recovery_weight=None, transmission_weight=None, return_full_data=False, sim_kwargs=None, **args):
     r'''
     Performs SIS simulations for epidemics on networks with or without weighted edges.
 
@@ -2131,7 +2077,7 @@ def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=
         # handle weighted vs. unweighted?
             for nbr in nbrData["neighbors"]: # there may be self-loops so account for this later
                 if status[nbr] == 'S':
-                    contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
+                    contagion = transmission_function(status, G.neighbors[nbr][uid]["neighbors"], **args)
                     if contagion != 0:
                         IS_links[len(nbrData["neighbors"])+1].update((G.neighbors[nbr][uid]["neighbors"], nbr), weight_increment=edgeweight(nbrData)) # need to be able to multiply by the contagion?
 
@@ -2149,12 +2095,9 @@ def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=
 
     while infecteds and t < tmax:
         # rejection sampling
-        #i = 0
         while True:
-            choice = random.choice(list(total_rates.keys())) # Is there a faster way to do this?
-            #i += 1
+            choice = random.choice(list(total_rates.keys()))
             if random.random() < total_rates[choice]/total_rate:
-                #num_iter.append(i)
                 break
 
         if choice == 1: #recover
@@ -2165,19 +2108,18 @@ def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=
 
             # Find the SI links for the recovered node to get reinfected
             for uid, nbrData in G.neighbors[recovering_node].items():
-                # this won't ever be true with the new data structure (nbr is a list); maybe make this
-                if recovering_node in set(nbrData["neighbors"]):
-                    continue
-                else:
-                    contagion =  contagionMechanism(status, nbrData["neighbors"], mechanism="collective")
-                    if contagion != 0:
-                        IS_links[len(nbrData["neighbors"])+1].update((nbrData["neighbors"], recovering_node), weight_increment = edgeweight(nbrData))
+                # if recipient in set(nbrData["neighbors"]):  #move past self edges
+                #     continue
+                # Not sure about this...
+                contagion =  transmission_function(status, nbrData["neighbors"], **args)
+                if contagion != 0:
+                    IS_links[len(nbrData["neighbors"])+1].update((nbrData["neighbors"], recovering_node), weight_increment = edgeweight(nbrData))
 
             # reduce the number of infected links because of the healing
             for uid, nbrData in G.neighbors[recovering_node].items():
                 for nbr in nbrData["neighbors"]:
                     if status[nbr] == 'S' and (G.neighbors[nbr][uid]["neighbors"], nbr) in IS_links[len(nbrData["neighbors"])+1]: # if the key doesn't exist, don't attempt to remove it
-                        contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
+                        contagion = transmission_function(status, G.neighbors[nbr][uid]["neighbors"], **args)
                         if contagion == 0:
                             try:
                                 IS_links[len(nbrData["neighbors"])+1].remove((G.neighbors[nbr][uid]["neighbors"], nbr)) # should this be "update" instead of "remove"?
@@ -2199,23 +2141,20 @@ def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=
 
 
             for uid, nbrData in G.neighbors[recipient].items():
-                # this won't ever be true with the new data structure (nbr is a list)
-                if recipient in set(nbrData["neighbors"]):  #move past self edges
-                    continue
-                else:
-                    try:
-                        IS_links[len(nbrData["neighbors"])+1].remove((nbrData["neighbors"], recipient)) # multiply by contagion?
-                    except:
-                        pass
+                # if recipient in set(nbrData["neighbors"]):  #move past self edges
+                #     continue
+                # the above line messed up the simulation
+                try:
+                    IS_links[len(nbrData["neighbors"])+1].remove((nbrData["neighbors"], recipient)) # multiply by contagion?
+                except:
+                    pass
 
             for uid, nbrData in G.neighbors[recipient].items():
                 for nbr in nbrData["neighbors"]:
                     if status[nbr] == 'S':
-                        contagion = contagionMechanism(status, G.neighbors[nbr][uid]["neighbors"], mechanism="collective")
+                        contagion = transmission_function(status, G.neighbors[nbr][uid]["neighbors"], **args)
                         if contagion != 0:
                             IS_links[len(nbrData["neighbors"])+1].update((G.neighbors[nbr][uid]["neighbors"], nbr), weight_increment = edgeweight(nbrData))
-                            #IS_links[len(nbrData["neighbors"])+1].insert((G.neighbors[nbr][uid]["neighbors"], nbr), weight = edgeweight(nbrData))
-
             times.append(t)
             S.append(S[-1]-1)
             I.append(I[-1]+1)
@@ -2237,272 +2176,6 @@ def Gillespie_SIS(G, tau, gamma, initial_infecteds=None, rho=None, tmin=0, tmax=
             sim_kwargs = {}
         #return EoN.Simulation_Investigation(G, node_history, possible_statuses=['S', 'I'], **sim_kwargs)
 
-def Gillespie_complex_contagion(G, rate_function, transition_choice,
-    get_influence_set, IC, return_statuses, tmin = 0, tmax=100, parameters = None,
-    return_full_data = False, sim_kwargs = None):
-
-    r'''
-    Initially intended for a complex contagion.  However, this can allow influence
-    from any nodes, not just immediate neighbors.
-
-    The complex contagion must be something that all nodes do something simultaneously
-
-    **This is not the same as if node** ``v`` **primes node** ``u`` **and
-    later node** ``w`` **causes** ``u`` **to transition.  This will require
-    that both** ``v`` **and** ``w`` **have the relevant states at the moment**
-    **of transition and it has forgotten any previous history.**
-
-    :Arguments:
-
-    **G** (NetworkX Graph)
-        The underlying network
-
-    **rate_function**
-        A function that will take the network, a node, and the statuses of all
-        the nodes and calculate the rate at which the node changes its status.
-
-        The function is called like
-
-        if parameters is None:
-            rate_function(G, node, status)
-        else:
-            rate_function(G, node, status, parameters)
-
-        where G is the graph, node is the node, status is a dict such that
-        status[u] returns the status of u, and parameters is the parameters
-        passed to the function.
-
-        it returns a number, the combined rate at which ``node`` might change
-        status.
-
-
-    **transition_choice**
-        A function that takes the network, a node, and the statuses of all the
-        nodes and chooses which event will happen.  The function should be
-        called [with or without ``parameters``]
-
-        if ``parameters`` is ``None``:
-            ``transition_choice(G, node, status)``
-        else:
-            ``transition_choice(G, node, status, parameters)``
-
-        where ``G`` is the graph, ``node` is the node, ``status` is a dict
-        such that ``status[u]`` returns the status of u, and ``parameters`` is
-        the parameters passed to the function.
-
-        It should return the new status of ``node`` based on the fact that the
-        node is changing status.
-
-    **get_influence_set**
-        When a node ``u`` changes status, we want to know which nodes may have their
-        rate altered.  We need to update their rates.  This function returns all
-        nodes that may be affected by ``u`` (either in its previous state or its
-        current state).  We will go through and recalculate the rates for all
-        of these nodes.  For a contagion, we can simply choose all neighbors,
-        but it may be faster to leave out any nodes that it wouldn't have
-        affected before or after its transition (e.g., R or I neighbors in SIR).
-
-        if ``parameters`` is None:
-            ``get_influence_set(G, node, status)``
-        else:
-            ``get_influence_set(G, node, status, parameters)``
-
-        where G is the graph, node is the node, status is a dict such that
-        status[u] returns the status of u, and parameters is the parameters
-        passed to the function.
-
-        it should return the set of nodes whose rates need to be recalculated.
-
-        Most likely, it is
-
-        def get_influence_set(G, node, status):
-            return G.neighbors(node)
-
-
-    **IC**
-        A dict.  IC[node] returns the status of node.
-
-    **return_statuses** list or other iterable (but not a generator)
-        The statuses that we will return information for, in the order
-        we will return them.
-
-    **tmin** number (default 0)
-        starting time
-
-    **tmax** number (default 100)
-        stop time
-
-    **return_full_data** boolean
-        currently needs to be False.  True raises an error.
-
-    **parameters**  list/tuple.
-        Any parameters of the functions rate_function, transition_choice, influence_set
-        We assume all three functions can accept parameters.
-        Examples: recovery rate, transmission rate, ...
-
-
-    :Returns:
-
-    **(times, status1, status2, ...)**  tuple of numpy arrays
-        first entry is the times at which events happen.
-        second (etc) entry is an array with the same number of entries as ``times``
-        giving the number of nodes of status ordered as they are in ``return_statuses``
-
-
-    :SAMPLE USE:
-    This simply does an SIR epidemic, by saying that the rate of becoming
-    infected is tau times the number of infected neighbors.
-
-
-    ::
-
-
-        import networkx as nx
-        import EoN
-        import matplotlib.pyplot as plt
-        from collections import defaultdict #makes defining the initial condition easier
-
-
-        def rate_function(G, node, status, parameters):
-            #This function needs to return the rate at which node changes status.
-            #
-            tau,gamma = parameters
-            if status[node] == 'I':
-                return gamma
-            elif status[node] == 'S':
-                return tau*len([nbr for nbr in G.neighbors(node) if status[nbr] == 'I'])
-            else:
-                return 0
-
-        def transition_choice(G, node, status, parameters):
-            #this function needs to return the new status of node.  We already
-            #know it is changing status.
-            #
-            #this function could be more elaborate if there were different
-            #possible transitions that could happen.
-            if status[node] == 'I':
-                return 'R'
-            elif status[node] == 'S':
-                return 'I'
-
-        def get_influence_set(G, node, status, parameters):
-            #this function needs to return any node whose rates might change
-            #because ``node`` has just changed status.
-            #
-            #the only neighbors a node might affect are the susceptible ones.
-
-            return {nbr for nbr in G.neighbors(node) if status[nbr] == 'S'}
-
-        G = nx.fast_gnp_random_graph(100000,0.00005)
-
-        gamma = 1.
-        tau = 0.5
-        parameters = (tau, gamma)
-
-        IC = defaultdict(lambda: 'S')
-        for node in range(200):
-            IC[node] = 'I'
-
-        t, S, I, R = EoN.Gillespie_complex_contagion(G, rate_function,
-                                   transition_choice, get_influence_set, IC,
-                                   return_statuses=('S', 'I', 'R'),
-                                   parameters=parameters)
-
-        plt.plot(t, I)
-
-    '''
-
-    if parameters is None:
-        parameters = ()
-
-
-    status = {node: IC[node] for node in G.nodes()}
-
-    if return_full_data:
-        node_history = {node:([tmin], [status[node]]) for node in G.nodes()}
-
-    times = [tmin]
-    t = tmin
-    data = {}
-    C = Counter(status.values())
-    for return_status in return_statuses:
-        data[return_status] = [C[return_status]]
-
-    nodes_by_rate = _ListDict_(weighted=True)
-
-    for u in G.nodes():
-        rate = rate_function(G, u, status, parameters)
-        if rate>0:
-            nodes_by_rate.insert(u, weight = rate)
-
-    if nodes_by_rate.total_weight()>0:
-        delay = random.expovariate(nodes_by_rate.total_weight())
-    else:
-        delay = float('Inf')
-    t += delay
-    while nodes_by_rate.total_weight()>0 and t< tmax:
-
-        times.append(t)
-#        print(delta_t, nodes_by_rate.total_weight())
-        node = nodes_by_rate.choose_random()
-        new_status = transition_choice(G, node, status, parameters)
-
-        for x in data.keys():
-            data[x].append(data[x][-1])
-        if status[node] in return_statuses:
-            data[status[node]][-1] -= 1
-        if new_status in return_statuses:
-            data[new_status][-1] += 1
-
-        status[node] = new_status
-        if return_full_data:
-            node_history[node][0].append(t)
-            node_history[node][1].append(new_status)
-
-        #update self
-        weight = rate_function(G, node, status, parameters)
-        nodes_by_rate.insert(node, weight = weight)
-
-        influence_set = get_influence_set(G, node, status, parameters)
-
-        for nbr in influence_set:
-            weight = rate_function(G, nbr, status, parameters)
-            nodes_by_rate.insert(nbr, weight=weight)
-
-        if nodes_by_rate.total_weight()>0:
-            delay = random.expovariate(nodes_by_rate.total_weight())
-        else:
-            delay = float('Inf')
-        t += delay
-
-    if not return_full_data:
-        returnval = []
-        times = np.array(times)
-        returnval.append(times)
-        for return_status in return_statuses:
-            data[return_status] = np.array(data[return_status])
-            returnval.append(data[return_status])
-        return returnval
-    else:
-        if sim_kwargs is None:
-            sim_kwargs = {}
-        return EoN.Simulation_Investigation(G, node_history, possible_statuses = return_statuses, **sim_kwargs)
-
-def Gillespie_Arbitrary(G, spontaneous_transition_graph, nbr_induced_transition_graph, IC, return_statuses, tmin = 0,  tmax=100, spont_kwargs = None, nbr_kwargs=None, return_full_data = False, sim_kwargs = None):
-  r'''Calls Gillespie_simple_contagion.  This is here for legacy reasons.
-
-  Gillespie_Arbitrary has been replaced by Gillespie_simple_contagion.  It
-  will be removed in future versions.
-  '''
-
-  print("Gillespie_Arbitrary has been replaced by Gillespie_simple_contagion.\n",
-        "It will be removed in future versions.")
-
-  return Gillespie_simple_contagion(G, spontaneous_transition_graph,
-                                    nbr_induced_transition_graph, IC,
-                                    return_statuses, tmin = tmin,  tmax=tmax,
-                                    return_full_data = return_full_data,
-                                    **sim_kwargs)
 
 def Gillespie_simple_contagion(G, spontaneous_transition_graph,
   nbr_induced_transition_graph, IC, return_statuses, tmin = 0,  tmax=100,

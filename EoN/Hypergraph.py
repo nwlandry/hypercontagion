@@ -3,10 +3,9 @@ import time
 from collections import defaultdict
 
 class Hypergraph:
-    def __init__(self, hyperedges, weightedEdges=False, nodeWeights=None):
-        self.importHyperedges(hyperedges, weightedEdges)
+    def __init__(self, hyperedges, weightedEdges=False):
+        self.addEdges(hyperedges, weightedEdges)
         self.deleteDegenerateHyperedges()
-        self.generateNodes(nodeWeights)
         self.findHyperedgeSizes()
         self.generateNeighbors()
         self.nodeLabels = list(self.nodes.keys())
@@ -57,31 +56,38 @@ class Hypergraph:
         """
         return len(self.nodes)
 
-    def importHyperedges(self, hyperedges, weightedEdges):
+    def addEdges(self, hyperedges, weightedEdges):
         # unweighted format for hyperedges: {"id0":{"members":(1,2,3)}, "id1":{"members":(1,2)},...}
         # weighted format for hyperedges: {"id0":{"members":(1,2,3),"weight":1.1}, "id1":{"members":(1,2),"weight":0.5},...}
-        self.hyperedges = hyperedges.copy()
         self.weightedEdges = weightedEdges
-        # need a better way to check whether the format is correct
-
-    def generateNodes(self, nodeWeights):
+        self.nodes = dict()
         nodes = set()
-        # find unique nodes in the hyperedges
-        for edgeData in self.hyperedges.values():
-            nodes.update(edgeData["members"])
+        # if list of tuples
+        if isinstance(hyperedges, list):
+            self.hyperedges = dict()
+            uid = 0
+            for hyperedge in hyperedges:
+                if self.weightedEdges:
+                    self.hyperedges[uid] = {"members":hyperedge[:-1],"weight":hyperedge[-1]}
+                else:
+                    self.hyperedges[uid] = {"members":hyperedge}
+                    nodes.update(hyperedge)
 
-        if nodeWeights is None:
-            self.weightedNodes = False
-            self.nodes = dict()
-            for nodeLabel in list(nodes):
-                self.nodes[nodeLabel] = dict()
-        else:
-            self.weightedNodes = True
-            self.nodes = dict()
-            if len(nodes) != len(nodeWeights):
-                raise Exception("Not the same length")
-            for nodeLabel in list(nodes):
-                self.nodes[nodeLabel] = {"weight":nodeWeights[nodeLabel]}
+        elif isinstance(hyperedges, dict):
+            self.hyperedges = hyperedges.copy()
+            for edgeData in self.hyperedges.values():
+                nodes.update(edgeData["members"])
+
+        for nodeLabel in list(nodes):
+            self.nodes[nodeLabel] = dict()
+
+    def addNodeAttributes(self, nodeAttributes):
+        # find unique nodes in the hyperedges
+        for label, attribute in nodeAttributes.items():
+            try:
+                self.nodes[label] = attribute
+            except:
+                print("invalid label")
 
     def deleteDegenerateHyperedges(self):
         cleanedHyperedges = dict()

@@ -5,14 +5,16 @@ import EoN
 from collections import defaultdict
 from collections import Counter
 
-# canned functions
-def degroot_model(members, status, epsilon):
+# built-in functions
+
+# discrete output
+def majority_rule(members, status):
     return("under dev")
 
-def majority_rule(members, status, epsilon):
+def quorum(members, status, threshold=0.5):
     return("under dev")
 
-def voter_model(node, neighbors, status, adoptionProb = 0.5):
+def voter_model(node, neighbors, status, adoptionProb=1):
     nbrs = neighbors["neighbors"]
     opinions = set(status[list(nbrs)]) # get unique opinions
     if len(opinions) == 1:
@@ -20,7 +22,11 @@ def voter_model(node, neighbors, status, adoptionProb = 0.5):
             status[node] = opinions.pop()
     return status
 
-def deffuant_weisbuch(hyperedgeData, status, epsilon=0.5, update="cautious", m=0.1):
+# continuous output
+def discordance(members, status):
+    return 1/(len(members) - 1)*np.sum(np.power(status[members] - np.mean(status[members]), 2))
+
+def deffuant_weisbuch(hyperedgeData, status, epsilon=0.5, update="average", m=0.1):
     status = status.copy()
     members = list(hyperedgeData["members"])
     if discordance(members, status) < epsilon:
@@ -32,9 +38,6 @@ def deffuant_weisbuch(hyperedgeData, status, epsilon=0.5, update="cautious", m=0
             return status
     else:
         return status
-
-def discordance(members, status):
-    return 1/(len(members) - 1)*np.sum(np.power(status[members] - np.mean(status[members]), 2))
 
 def hegselmann_krause(G, status, epsilon=0.1):
     newStatus = status.copy()
