@@ -6,7 +6,6 @@ import time
 import numpy as np
 import opinion_simulation
 import random
-#import cProfile
 
 n = 1000
 parameters = [{"degree-distribution":"uniform","min-degree":4,"max-degree":6,"hyperedge-size":2,"size":n,"is-correlated":True},{"degree-distribution":"uniform","min-degree":4,"max-degree":6,"hyperedge-size":3,"size":n,"is-correlated":True}]
