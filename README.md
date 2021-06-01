@@ -1,2 +1,2 @@
-# Epidemics-on-Hypergraphs
- Library for epidemics on hypergraphs
+# HyperContagion
+ Library for contagion on hypergraphs
