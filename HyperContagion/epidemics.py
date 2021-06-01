@@ -2,7 +2,7 @@
 import random
 import heapq
 import numpy as np
-# import EoN
+import HyperContagion
 from collections import defaultdict
 from collections import Counter
 
@@ -45,7 +45,6 @@ def size_dependent(status, neighbors):
     return sum([status[i] == 'I' for i in neighbors])
 
 # distribution function
-
 def _truncated_exponential_(rate, T):
     r'''returns a number between 0 and T from an
     exponential distribution conditional on the outcome being between 0 and T'''
@@ -54,7 +53,6 @@ def _truncated_exponential_(rate, T):
     return t - L*T
 
 # Classes for the simulations
-
 class myQueue(object):
     r'''
     This class is used to store and act on a priority queue of events for
@@ -113,22 +111,6 @@ class _ListDict_(object):
     This will allow me to select a random element uniformly, and then use
     rejection sampling to make sure it's been selected with the appropriate
     weight.
-
-
-    I believe a faster data structure can be created with a (binary) tree.
-    We add an object with a weight to the tree.  The nodes track their weights
-    and the sum of the weights below it.  So choosing a random object (by weight)
-    means that we choose a random number between 0 and weight_sum.  Then
-    if it's less than the first node's weight, we choose that.  Otherwise,
-    we see if the remaining bit is less than the total under the first child.
-    If so, go there, otherwise, it's the other child.  Then iterate.  Adding
-    a node would probably involve placing higher weight nodes higher in
-    the tree.  Currently I don't have a fast enough implementation of this
-    for my purposes.  So for now I'm sticking to the mixture of lists &
-    dictionaries.
-
-    I believe this structure I'm describing is similar to a "partial sum tree"
-    or a "Fenwick tree", but they seem subtly different from this.
     '''
     def __init__(self, weighted = False):
         self.item_to_position = {}
@@ -270,7 +252,7 @@ class _ListDict_(object):
 def discrete_SIS(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False, **args):
 
     if rho is not None and initial_infecteds is not None:
-        raise EoN.EoNError("cannot define both initial_infecteds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_infecteds and rho")
 
     gamma = float(gamma)
 
@@ -355,7 +337,7 @@ def discrete_SIS(G, tau, gamma, transmission_function=threshold, initial_infecte
 def discrete_SIR(G, tau, gamma, transmission_function=collective_contagion, initial_infecteds=None, initial_recovereds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False, **args):
 
     if rho is not None and initial_infecteds is not None:
-        raise EoN.EoNError("cannot define both initial_infecteds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_infecteds and rho")
 
     gamma = float(gamma)
 
@@ -726,14 +708,14 @@ def fast_SIR(G, tau, gamma, initial_infecteds = None, initial_recovereds = None,
         initial_size = 10000
         gamma = 1.
         tau = 0.3
-        t, S, I, R = EoN.fast_SIR(G, tau, gamma,
+        t, S, I, R = HyperContagion.fast_SIR(G, tau, gamma,
                                     initial_infecteds = range(initial_size))
 
         plt.plot(t, I)
     '''
     #tested in test_SIR_dynamics
     if transmission_weight is not None or tau*gamma == 0:
-        trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma,
+        trans_rate_fxn, rec_rate_fxn = HyperContagion._get_rate_functions_(G, tau, gamma,
                                                     transmission_weight,
                                                     recovery_weight)
         def trans_time_fxn(source, target, trans_rate_fxn):
@@ -765,7 +747,7 @@ def fast_SIR(G, tau, gamma, initial_infecteds = None, initial_recovereds = None,
         #to speed up the code.
 
         #get rec_rate_fxn (recovery rate may be variable)
-        trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma, transmission_weight, recovery_weight)
+        trans_rate_fxn, rec_rate_fxn = HyperContagion._get_rate_functions_(G, tau, gamma, transmission_weight, recovery_weight)
 
         return fast_nonMarkov_SIR(G, trans_and_rec_time_fxn=_trans_and_rec_time_Markovian_const_trans_, trans_and_rec_time_args=(tau, rec_rate_fxn), initial_infecteds = initial_infecteds, initial_recovereds = initial_recovereds, rho=rho, tmin = tmin, tmax = tmax, return_full_data = return_full_data, sim_kwargs=sim_kwargs)
 
@@ -905,7 +887,7 @@ def fast_nonMarkov_SIR(G, trans_time_fxn=None, rec_time_fxn=None, trans_and_rec_
     ::
 
 
-        import EoN
+        import HyperContagion
         import networkx as nx
         import matplotlib.pyplot as plt
         import random
@@ -927,7 +909,7 @@ def fast_nonMarkov_SIR(G, trans_time_fxn=None, rec_time_fxn=None, trans_and_rec_
         tau = 0.3
         initial_inf_count = 100
 
-        t, S, I, R = EoN.fast_nonMarkov_SIR(G,
+        t, S, I, R = HyperContagion.fast_nonMarkov_SIR(G,
                                 trans_time_fxn=trans_time_fxn,
                                 rec_time_fxn=rec_time_fxn,
                                 trans_time_args=(tau,),
@@ -941,16 +923,16 @@ def fast_nonMarkov_SIR(G, trans_time_fxn=None, rec_time_fxn=None, trans_and_rec_
 
     '''
     if rho and initial_infecteds:
-        raise EoN.EoNError("cannot define both initial_infecteds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_infecteds and rho")
     if rho and initial_recovereds:
-        raise EoN.EoNError("cannot define both initial_recovereds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_recovereds and rho")
 
     if (trans_time_fxn and not rec_time_fxn) or (rec_time_fxn and not trans_time_fxn):
-        raise EoN.EoNError("must define both trans_time_fxn and rec_time_fxn or neither")
+        raise HyperContagion.EoNError("must define both trans_time_fxn and rec_time_fxn or neither")
     elif trans_and_rec_time_fxn and trans_time_fxn:
-        raise EoN.EoNError("cannot define trans_and_rec_time_fxn at the same time as trans_time_fxn and rec_time_fxn")
+        raise HyperContagion.EoNError("cannot define trans_and_rec_time_fxn at the same time as trans_time_fxn and rec_time_fxn")
     elif not trans_and_rec_time_fxn and not trans_time_fxn:
-        raise EoN.EoNError("if not defining trans_and_rec_time_fxn, must define trans_time_fxn and rec_time_fxn")
+        raise HyperContagion.EoNError("if not defining trans_and_rec_time_fxn, must define trans_time_fxn and rec_time_fxn")
 
     if not trans_and_rec_time_fxn: #we define the joint function.
         trans_and_rec_time_fxn =  _find_trans_and_rec_delays_SIR_
@@ -1025,7 +1007,7 @@ def fast_nonMarkov_SIR(G, trans_time_fxn=None, rec_time_fxn=None, trans_and_rec_
                                                     tmin, SIR = True)
         if sim_kwargs is None:
             sim_kwargs = {}
-        return EoN.Simulation_Investigation(G, node_history, transmissions,
+        return HyperContagion.Simulation_Investigation(G, node_history, transmissions,
                                             possible_statuses = ['S', 'I', 'R'],
                                             **sim_kwargs)
 
@@ -1276,7 +1258,7 @@ def _find_next_trans_SIS_Markov(Q, time, tau, source, target, status, rec_time,
         elif tau == 0:
             delay = float('Inf')
         else:
-            raise EoN.EoNError('rate must be non-negative')
+            raise HyperContagion.EoNError('rate must be non-negative')
         #transmission_time = max(time, rec_time[target]) + delay
         transmission_time = time + delay
         if transmission_time<rec_time[target]:
@@ -1373,23 +1355,23 @@ def fast_SIS(G, tau, gamma, initial_infecteds=None, rho = None, tmin=0, tmax=100
 
 
         import networkx as nx
-        import EoN
+        import HyperContagion
         import matplotlib.pyplot as plt
 
         G = nx.configuration_model([1,5,10]*100000)
         initial_size = 10000
         gamma = 1.
         tau = 0.2
-        t, S, I = EoN.fast_SIS(G, tau, gamma, tmax = 10,
+        t, S, I = HyperContagion.fast_SIS(G, tau, gamma, tmax = 10,
                                     initial_infecteds = range(initial_size))
 
         plt.plot(t, I)
 
     '''
     if rho is not None and initial_infecteds is not None:
-        raise EoN.EoNError("cannot define both initial_infecteds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_infecteds and rho")
 
-    trans_rate_fxn, rec_rate_fxn = EoN._get_rate_functions_(G, tau, gamma,
+    trans_rate_fxn, rec_rate_fxn = HyperContagion._get_rate_functions_(G, tau, gamma,
                                                 transmission_weight,
                                                 recovery_weight)
 
@@ -1435,7 +1417,7 @@ def fast_SIS(G, tau, gamma, initial_infecteds=None, rho = None, tmin=0, tmax=100
         node_history = _transform_to_node_history_(infection_times, recovery_times, tmin, SIR = False)
         if sim_kwargs is None:
             sim_kwargs = {}
-        return EoN.Simulation_Investigation(G, node_history, transmissions,
+        return HyperContagion.Simulation_Investigation(G, node_history, transmissions,
                                             possible_statuses=['S', 'I'],
                                             **sim_kwargs)
 
@@ -1567,14 +1549,14 @@ def fast_nonMarkov_SIS(G, trans_time_fxn=None, rec_time_fxn=None,
 
     '''
     if rho  and initial_infecteds:
-        raise EoN.EoNError("cannot define both initial_infecteds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_infecteds and rho")
 
     if (trans_time_fxn and not rec_time_fxn) or (rec_time_fxn and not trans_time_fxn):
-        raise EoN.EoNError("must define both trans_time_fxn and rec_time_fxn or neither")
+        raise HyperContagion.EoNError("must define both trans_time_fxn and rec_time_fxn or neither")
     if trans_and_rec_time_fxn and trans_time_fxn:
-        raise EoN.EoNError("cannot define trans_and_rec_time_fxn at the same time as either trans_time_fxn or rec_time_fxn")
+        raise HyperContagion.EoNError("cannot define trans_and_rec_time_fxn at the same time as either trans_time_fxn or rec_time_fxn")
     elif not trans_and_rec_time_fxn and not trans_time_fxn:
-        raise EoN.EoNError("if not defining trans_and_rec_time_fxn, must define trans_time_fxn and rec_time_fxn")
+        raise HyperContagion.EoNError("if not defining trans_and_rec_time_fxn, must define trans_time_fxn and rec_time_fxn")
 
     if not trans_and_rec_time_fxn: #we define the joint function.
         trans_and_rec_time_fxn =  _find_trans_and_rec_delays_SIS_
@@ -1626,7 +1608,7 @@ def fast_nonMarkov_SIS(G, trans_time_fxn=None, rec_time_fxn=None,
         node_history = _transform_to_node_history_(infection_times, recovery_times, tmin, SIR = False)
         if sim_kwargs is None:
             sim_kwargs = {}
-        return EoN.Simulation_Investigation(G, node_history, transmissions, possible_statuses = ['S', 'I'], **sim_kwargs)
+        return HyperContagion.Simulation_Investigation(G, node_history, transmissions, possible_statuses = ['S', 'I'], **sim_kwargs)
 
 
 def Gillespie_SIR(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, initial_recovereds = None, rho = None, tmin = 0, tmax=float('Inf'), recovery_weight = None, transmission_weight = None, return_full_data = False, **args):
@@ -1734,14 +1716,14 @@ def Gillespie_SIR(G, tau, gamma, transmission_function=threshold, initial_infect
     ::
 
         import networkx as nx
-        import EoN
+        import HyperContagion
         import matplotlib.pyplot as plt
 
         G = nx.configuration_model([1,5,10]*100000)
         initial_size = 10000
         gamma = 1.
         tau = 0.3
-        t, S, I, R = EoN.Gillespie_SIR(G, tau, gamma,
+        t, S, I, R = HyperContagion.Gillespie_SIR(G, tau, gamma,
                                     initial_infecteds = range(initial_size))
 
         plt.plot(t, I)
@@ -1917,7 +1899,7 @@ def Gillespie_SIR(G, tau, gamma, transmission_function=threshold, initial_infect
         node_history = _transform_to_node_history_(infection_times, recovery_times, tmin, SIR = True)
         if sim_kwargs is None:
             sim_kwargs = {}
-        return EoN.Simulation_Investigation(G, node_history, transmissions, possible_statuses = ['S', 'I', 'R'], **sim_kwargs)
+        return HyperContagion.Simulation_Investigation(G, node_history, transmissions, possible_statuses = ['S', 'I', 'R'], **sim_kwargs)
 
 def Gillespie_SIS(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, rho=None, tmin=0, tmax=100, recovery_weight=None, transmission_weight=None, return_full_data=False, sim_kwargs=None, **args):
     r'''
@@ -1997,21 +1979,21 @@ def Gillespie_SIS(G, tau, gamma, transmission_function=threshold, initial_infect
     ::
 
         import networkx as nx
-        import EoN
+        import HyperContagion
         import matplotlib.pyplot as plt
 
         G = nx.configuration_model([1,5,10]*100000)
         initial_size = 10000
         gamma = 1.
         tau = 0.2
-        t, S, I = EoN.Gillespie_SIS(G, tau, gamma, tmax = 20,
+        t, S, I = HyperContagion.Gillespie_SIS(G, tau, gamma, tmax = 20,
                                     initial_infecteds = range(initial_size))
 
         plt.plot(t, I)
 
     '''
     if rho is not None and initial_infecteds is not None:
-        raise EoN.EoNError("cannot define both initial_infecteds and rho")
+        raise HyperContagion.EoNError("cannot define both initial_infecteds and rho")
 
     if return_full_data:
         infection_times = defaultdict(lambda: []) #defaults to an empty list
@@ -2174,7 +2156,7 @@ def Gillespie_SIS(G, tau, gamma, transmission_function=threshold, initial_infect
         node_history = _transform_to_node_history_(infection_times, recovery_times, tmin, SIR = False)
         if sim_kwargs is None:
             sim_kwargs = {}
-        #return EoN.Simulation_Investigation(G, node_history, possible_statuses=['S', 'I'], **sim_kwargs)
+        #return HyperContagion.Simulation_Investigation(G, node_history, possible_statuses=['S', 'I'], **sim_kwargs)
 
 
 def Gillespie_simple_contagion(G, spontaneous_transition_graph,
@@ -2434,7 +2416,7 @@ def Gillespie_simple_contagion(G, spontaneous_transition_graph,
 
     ::
 
-        import EoN
+        import HyperContagion
         import networkx as nx
         from collections import defaultdict
         import matplotlib.pyplot as plt
@@ -2467,7 +2449,7 @@ def Gillespie_simple_contagion(G, spontaneous_transition_graph,
 
         return_statuses = ('S', 'E', 'I', 'R')
 
-        t, S, E, I, R = EoN.Gillespie_simple_contagion(G, H, J, IC, return_statuses,
+        t, S, E, I, R = HyperContagion.Gillespie_simple_contagion(G, H, J, IC, return_statuses,
                                                 tmax = float('Inf'))
 
         plt.semilogy(t, S, label = 'Susceptible')
@@ -2521,7 +2503,7 @@ def Gillespie_simple_contagion(G, spontaneous_transition_graph,
         rate[transition] = spontaneous_transition_graph.adj[transition[0]][transition[1]]['rate']
         if 'weight_label' in spontaneous_transition_graph.adj[transition[0]][transition[1]]:
             if 'rate_function' in spontaneous_transition_graph.adj[transition[0]][transition[1]]:
-                raise EoN.EoNError('cannot define both "weight_label" and "rate_function" in',\
+                raise HyperContagion.EoNError('cannot define both "weight_label" and "rate_function" in',\
                                     'spontaneous_transitions graph')
             wl = spontaneous_transition_graph.adj[transition[0]][transition[1]]['weight_label']
             get_weight[transition] = nx.get_node_attributes(G, wl) #This is a dict mapping node to its weight.
@@ -2538,12 +2520,12 @@ def Gillespie_simple_contagion(G, spontaneous_transition_graph,
     #CONTINUING SETTING UP POSSIBLE EVENTS, NOW WITH INDUCED TRANSITIONS.
     for transition in induced_transitions:
         if transition[0][0] != transition[1][0]:
-            raise EoN.EoNError("transition {} -> {} not allowed: first node must keep same status".format(transition[0],transition[1]))
+            raise HyperContagion.EoNError("transition {} -> {} not allowed: first node must keep same status".format(transition[0],transition[1]))
         rate[transition] = nbr_induced_transition_graph.adj[transition[0]][transition[1]]['rate']
 
         if 'weight_label' in nbr_induced_transition_graph.adj[transition[0]][transition[1]]:
             if 'rate_function' in nbr_induced_transition_graph.adj[transition[0]][transition[1]]:
-                raise EoN.EoNError('cannot define both "weight_label" and "rate_function" in',\
+                raise HyperContagion.EoNError('cannot define both "weight_label" and "rate_function" in',\
                                     'nbr_induced_transitions graph')
             wl = nbr_induced_transition_graph.adj[transition[0]][transition[1]]['weight_label']
             get_weight[transition] = nx.get_edge_attributes(G, wl)#a dict mapping edge to its weight.
@@ -2722,4 +2704,4 @@ def Gillespie_simple_contagion(G, spontaneous_transition_graph,
     else:
         if sim_kwargs is None:
             sim_kwargs = {}
-        return EoN.Simulation_Investigation(G, node_history, transmissions, possible_statuses= return_statuses, **sim_kwargs)
+        return HyperContagion.Simulation_Investigation(G, node_history, transmissions, possible_statuses= return_statuses, **sim_kwargs)

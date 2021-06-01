@@ -127,15 +127,16 @@ def _get_rate_functions_(G, tau, gamma, transmission_weight = None,
     return trans_rate_fxn, rec_rate_fxn
 
 
-import EoN.auxiliary
-from EoN.auxiliary import *
-import EoN.simulation
-from EoN.simulation import *
-import EoN.analytic
-from EoN.analytic import *
-import EoN.simulation_investigation
-from EoN.simulation_investigation import *
-
+import HyperContagion.auxiliary
+from HyperContagion.auxiliary import *
+import HyperContagion.epidemics
+from HyperContagion.epidemics import *
+import HyperContagion.opinions
+from HyperContagion.opinions import *
+import HyperContagion.simulation_investigation
+from HyperContagion.simulation_investigation import *
+import HyperContagion.Hypergraph
+from HyperContagion.Hypergraph import *
 
 '''
 These are the systems I still want to include:

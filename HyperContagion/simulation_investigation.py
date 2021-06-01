@@ -1,5 +1,5 @@
 import networkx as nx
-import EoN
+import HyperContagion
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -317,7 +317,7 @@ class Simulation_Investigation():
         if 'S' in self._possible_statuses_:
             return self._summary_[1]['S']
         else:
-            raise EoN.EoNError("'S' is not a possible status")
+            raise HyperContagion.EoNError("'S' is not a possible status")
             
     def I(self):
         r''' 
@@ -328,7 +328,7 @@ class Simulation_Investigation():
         if 'I' in self._possible_statuses_:
             return self._summary_[1]['I']
         else:
-            raise EoN.EoNError("'I' is not a possible status")
+            raise HyperContagion.EoNError("'I' is not a possible status")
 
     def R(self):
         r''' 
@@ -339,7 +339,7 @@ class Simulation_Investigation():
         if 'R' in self._possible_statuses_:
             return self._summary_[1]['R']
         else:
-            raise EoN.EoNError("'R' is not a possible status")
+            raise HyperContagion.EoNError("'R' is not a possible status")
                 
     def transmissions(self):
         r'''Returns a list of tuples (t,u,v) stating that node u infected node
@@ -351,7 +351,7 @@ class Simulation_Investigation():
         recorded.'''
         
         if self._transmissions_ is None:
-            raise EoN.EoNError("transmissions were not provided when created")
+            raise HyperContagion.EoNError("transmissions were not provided when created")
         return self._transmissions_
         
     def transmission_tree(self):
@@ -379,7 +379,7 @@ class Simulation_Investigation():
         '''
         
         if self._transmissions_ is None:
-            raise EoN.EoNError("transmissions were not provided when created")
+            raise HyperContagion.EoNError("transmissions were not provided when created")
 
         T = nx.MultiDiGraph()
         
@@ -478,7 +478,7 @@ class Simulation_Investigation():
 
         for status in ts._D_:
             if status not in color_dict:
-                raise EoN.EoNError("Status {} is not in color_dict".format(status))
+                raise HyperContagion.EoNError("Status {} is not in color_dict".format(status))
         ts.color_dict=color_dict        
     
     def sim_update_kwargs(self, **kwargs):
@@ -523,7 +523,7 @@ class Simulation_Investigation():
         '''
         for status in self._possible_statuses_:
             if status not in color_dict:
-                raise EoN.EoNError("Status {} is not in color_dict".format(status))
+                raise HyperContagion.EoNError("Status {} is not in color_dict".format(status))
 
         self.sim_color_dict = color_dict
         self._simulation_time_series_.color_dict=color_dict

@@ -1,5 +1,5 @@
 import networkx as nx
-import EoN
+import HyperContagion
 import numpy as np
 import random
 

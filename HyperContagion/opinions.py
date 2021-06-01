@@ -1,7 +1,7 @@
 import random
 import heapq
 import numpy as np
-import EoN
+import HyperContagion
 from collections import defaultdict
 from collections import Counter
 
