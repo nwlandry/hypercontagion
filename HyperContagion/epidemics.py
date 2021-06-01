@@ -2,7 +2,7 @@
 import random
 import heapq
 import numpy as np
-import EoN
+# import EoN
 from collections import defaultdict
 from collections import Counter
 
@@ -352,7 +352,7 @@ def discrete_SIS(G, tau, gamma, transmission_function=threshold, initial_infecte
 
     return np.array(times), np.array(S), np.array(I)
 
-def discrete_SIR(G, tau, gamma, transmission_function=threshold, initial_infecteds=None, initial_recovereds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False, **args):
+def discrete_SIR(G, tau, gamma, transmission_function=collective_contagion, initial_infecteds=None, initial_recovereds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, return_full_data=False, **args):
 
     if rho is not None and initial_infecteds is not None:
         raise EoN.EoNError("cannot define both initial_infecteds and rho")
