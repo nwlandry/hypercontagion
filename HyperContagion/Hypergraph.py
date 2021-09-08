@@ -72,6 +72,7 @@ class Hypergraph:
                 else:
                     self.hyperedges[uid] = {"members":hyperedge}
                     nodes.update(hyperedge)
+                uid += 1
 
         elif isinstance(hyperedges, dict):
             self.hyperedges = hyperedges.copy()
@@ -115,7 +116,7 @@ class Hypergraph:
         return self.hyperedgeSizes
 
     def generateNeighbors(self):
-        self.neighbors = dict()
+        self.neighbors = defaultdict(dict)
         if self.weightedEdges:
             self.generateWeightedNeighbors()
         else:
@@ -217,7 +218,7 @@ class HypergraphGenerator:
         for hyperedgeSize, degreeSequence in self.hyperdegreeSequence.items():
             self.hyperedges.update(self.generateHyperedgesBySize(hyperedgeSize, degreeSequence))
 
-    def generateHyperedgesBySize(self, hyperedgeSize, degreeSequence, weighted=True):
+    def generateHyperedgesBySize(self, hyperedgeSize, degreeSequence, weighted=False):
         import string
         k = degreeSequence.copy()
         # Making sure we have the right number of stubs
