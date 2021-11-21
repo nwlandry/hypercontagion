@@ -12,8 +12,8 @@ import networkx as nx
 G = nx.grid_2d_graph(50, 50)  # each node is (u,v) where 0<=u,v<=99
 initial_infections = [(u, v) for (u, v) in G if 23 < u < 27 and 23 < v < 27]
 
-class TestSimSweepParameters:
 
+class TestSimSweepParameters:
     @classmethod
     def setup_class(cls):
         print("setup_class() before any methods in this class")
@@ -31,42 +31,146 @@ class TestSimSweepParameters:
         assert n % 2 == 0 or nn % 2 == 0
 
     def test_Gillespie_SIS_type(self):
-        t, S, I = EoN.Gillespie_SIS(G, 1.0, 1.0, initial_infecteds=initial_infections, return_full_data=False, tmax=10)
+        t, S, I = EoN.Gillespie_SIS(
+            G,
+            1.0,
+            1.0,
+            initial_infecteds=initial_infections,
+            return_full_data=False,
+            tmax=10,
+        )
         print("t.len", t.__len__())
         print("s.len", S.__len__())
         print("I.len", I.__len__())
 
-
     def test_Gillespie_SIS_sweep_gamma(self):
-        [EoN.Gillespie_SIS(G, 1.0, i, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.Gillespie_SIS(
+                G,
+                1.0,
+                i,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_Gillespie_SIR_sweep_gamma(self):
-        [EoN.Gillespie_SIR(G, 1.0, i, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.Gillespie_SIR(
+                G,
+                1.0,
+                i,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_fast_SIS_sweep_gamma(self):
-        [EoN.fast_SIS(G, 1.0, i, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.fast_SIS(
+                G,
+                1.0,
+                i,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_fast_SIR_sweep_gamma(self):
-        [EoN.fast_SIR(G, 1.0, i, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.fast_SIR(
+                G,
+                1.0,
+                i,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_Gillespie_SIS_sweep_tau(self):
-        [EoN.Gillespie_SIS(G, i, 1.0, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.Gillespie_SIS(
+                G,
+                i,
+                1.0,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_Gillespie_SIR_sweep_tau(self):
-        [EoN.Gillespie_SIR(G, i, 1.0, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.Gillespie_SIR(
+                G,
+                i,
+                1.0,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_fast_SIS_sweep_tau(self):
-        [EoN.fast_SIS(G, i, 1.0, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.fast_SIS(
+                G,
+                i,
+                1.0,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_fast_SIR_sweep_tau(self):
-        [EoN.fast_SIR(G, i, 1.0, initial_infecteds=initial_infections, return_full_data=True, tmax=10) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.fast_SIR(
+                G,
+                i,
+                1.0,
+                initial_infecteds=initial_infections,
+                return_full_data=True,
+                tmax=10,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_basic_discrete_SIS_sweep_p(self):
-        [EoN.basic_discrete_SIS(G, i, initial_infecteds=initial_infections,
-                                rho = None, tmin = 0, tmax = 10,
-                                return_full_data = True) for i in np.arange(0.0, 1.0, 0.1)]
+        [
+            EoN.basic_discrete_SIS(
+                G,
+                i,
+                initial_infecteds=initial_infections,
+                rho=None,
+                tmin=0,
+                tmax=10,
+                return_full_data=True,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]
 
     def test_basic_discrete_SIR_sweep_p(self):
-        [EoN.basic_discrete_SIR(G, i, initial_infecteds=initial_infections,
-                                rho = None, tmin = 0, tmax = 10, return_full_data = True) for i in np.arange(0.0, 1.0, 0.1)]
-
+        [
+            EoN.basic_discrete_SIR(
+                G,
+                i,
+                initial_infecteds=initial_infections,
+                rho=None,
+                tmin=0,
+                tmax=10,
+                return_full_data=True,
+            )
+            for i in np.arange(0.0, 1.0, 0.1)
+        ]

@@ -1,95 +1,21 @@
-#import networkx as nx
+# import networkx as nx
 import random
 import heapq
 import numpy as np
 from collections import defaultdict
 from collections import Counter
-from exception import HyperContagionError, HyperContagionException
-
+from hypercontagion.exception import HyperContagionError, HyperContagionException
+from hypercontagion.simulation.functions import threshold
 #######################
 #                     #
 #   Auxiliary stuff   #
 #                     #
 #######################
 
-# built-in functions
-def collective_contagion(status, neighbors):
-    for i in neighbors:
-        if status[i] != 'I':
-            return 0
-    return 1
-
-def individual_contagion(status, neighbors):
-    for i in neighbors:
-        if status[i] == 'I':
-            return 1
-    return 0
-
-def threshold(status, neighbors, threshold=0.5):
-    meanContagion = sum([status[i] == 'I' for i in neighbors])/len(neighbors)
-    if meanContagion < threshold:
-        return 0
-    elif meanContagion >= threshold:
-        return 1
-
-def majority_vote(status, neighbors):
-    meanContagion = sum([status[i] == 'I' for i in neighbors])/len(neighbors)
-    if meanContagion < 0.5:
-        return 0
-    elif meanContagion > 0.5:
-        return 1
-    else:
-        return random.choice([0, 1])
-
-def size_dependent(status, neighbors):
-    return sum([status[i] == 'I' for i in neighbors])
-
-# Classes for the simulations
-class myQueue(object):
-    r'''
-    This class is used to store and act on a priority queue of events for
-    event-driven simulations.  It is based on heapq.
-
-    Each queue is given a tmax (default is infinity) so that any event at later
-    time is ignored.
-
-    This is a priority queue of 4-tuples of the form
-                   ``(t, counter, function, function_arguments)``
-
-    The ``'counter'`` is present just to break ties, which generally only occur when
-    multiple events are put in place for the initial condition, but could also
-    occur in cases where events tend to happen at discrete times.
-
-    note that the function is understood to have its first argument be t, and
-    the tuple ``function_arguments`` does not include this first t.
-
-    So function is called as
-        ``function(t, *function_arguments)``
-
-    Previously I used a class of events, but sorting using the __lt__ function
-    I wrote was significantly slower than simply using tuples.
-    '''
-    def __init__(self, tmax=float("Inf")):
-        self._Q_ = []
-        self.tmax=tmax
-        self.counter = 0 #tie-breaker for putting things in priority queue
-    def add(self, time, function, args = ()):
-        r'''time is the time of the event.  args are the arguments of the
-        function not including the first argument which must be time'''
-        if time<self.tmax:
-            heapq.heappush(self._Q_, (time, self.counter, function, args))
-            self.counter += 1
-    def pop_and_run(self):
-        r'''Pops the next event off the queue and performs the function'''
-        t, counter, function, args = heapq.heappop(self._Q_)
-        function(t, *args)
-    def __len__(self):
-        r'''this will allow us to use commands like ``while Q:`` '''
-        return len(self._Q_)
 
 
 class _ListDict_(object):
-    r'''
+    r"""
     The Gillespie algorithm will involve a step that samples a random element
     from a set based on its weight.  This is awkward in Python.
 
@@ -103,18 +29,18 @@ class _ListDict_(object):
     This will allow me to select a random element uniformly, and then use
     rejection sampling to make sure it's been selected with the appropriate
     weight.
-    '''
-    def __init__(self, weighted = False):
+    """
+
+    def __init__(self, weighted=False):
         self.item_to_position = {}
         self.items = []
 
         self.weighted = weighted
         if self.weighted:
-            self.weight = defaultdict(int) #presume all weights positive
+            self.weight = defaultdict(int)  # presume all weights positive
             self.max_weight = 0
             self._total_weight = 0
             self.max_weight_count = 0
-
 
     def __len__(self):
         return len(self.items)
@@ -123,13 +49,14 @@ class _ListDict_(object):
         return item in self.item_to_position
 
     def _update_max_weight(self):
-        C = Counter(self.weight.values())  #may be a faster way to do this, we only need to count the max.
+        C = Counter(
+            self.weight.values()
+        )  # may be a faster way to do this, we only need to count the max.
         self.max_weight = max(C.keys())
         self.max_weight_count = C[self.max_weight]
 
-
-    def insert(self, item, weight = None):
-        r'''
+    def insert(self, item, weight=None):
+        r"""
         If not present, then inserts the thing (with weight if appropriate)
         if already there, replaces the weight unless weight is 0
 
@@ -139,22 +66,23 @@ class _ListDict_(object):
             replaces weight if already present, does not increment weight.
 
 
-        '''
+        """
         if self.__contains__(item):
             self.remove(item)
         if weight != 0:
             self.update(item, weight_increment=weight)
 
-
-    def update(self, item, weight_increment = None):
-        r'''
+    def update(self, item, weight_increment=None):
+        r"""
         If not present, then inserts the thing (with weight if appropriate)
         if already there, increments weight
 
         WARNING:
             increments weight if already present, cannot overwrite weight.
-        '''
-        if weight_increment is not None: #will break if passing a weight to unweighted case
+        """
+        if (
+            weight_increment is not None
+        ):  # will break if passing a weight to unweighted case
             if weight_increment > 0 or self.weight[item] != self.max_weight:
                 self.weight[item] = self.weight[item] + weight_increment
                 self._total_weight += weight_increment
@@ -163,7 +91,7 @@ class _ListDict_(object):
                     self.max_weight = self.weight[item]
                 elif self.weight[item] == self.max_weight:
                     self.max_weight_count += 1
-            else: #it's a negative increment and was at max
+            else:  # it's a negative increment and was at max
                 self.max_weight_count -= 1
                 self.weight[item] = self.weight[item] + weight_increment
                 self._total_weight += weight_increment
@@ -171,15 +99,17 @@ class _ListDict_(object):
                 if self.max_weight_count == 0:
                     self._update_max_weight
         elif self.weighted:
-            raise Exception('if weighted, must assign weight_increment')
+            raise Exception("if weighted, must assign weight_increment")
 
-        if item in self: #we've already got it, do nothing else
+        if item in self:  # we've already got it, do nothing else
             return
         self.items.append(item)
-        self.item_to_position[item] = len(self.items)-1
+        self.item_to_position[item] = len(self.items) - 1
 
     def remove(self, choice):
-        position = self.item_to_position.pop(choice) # why don't we pop off the last item and put it in the choice index?
+        position = self.item_to_position.pop(
+            choice
+        )  # why don't we pop off the last item and put it in the choice index?
         last_item = self.items.pop()
         if position != len(self.items):
             self.items[position] = last_item
@@ -189,12 +119,12 @@ class _ListDict_(object):
             weight = self.weight.pop(choice)
             self._total_weight -= weight
             if weight == self.max_weight:
-                #if we find ourselves in this case often
-                #it may be better just to let max_weight be the
-                #largest weight *ever* encountered, even if all remaining weights are less
+                # if we find ourselves in this case often
+                # it may be better just to let max_weight be the
+                # largest weight *ever* encountered, even if all remaining weights are less
                 #
                 self.max_weight_count -= 1
-                if self.max_weight_count == 0 and len(self)>0:
+                if self.max_weight_count == 0 and len(self) > 0:
                     self._update_max_weight()
 
     def choose_random(self):
@@ -203,7 +133,7 @@ class _ListDict_(object):
         if self.weighted:
             while True:
                 choice = random.choice(self.items)
-                if random.random() < self.weight[choice]/self.max_weight:
+                if random.random() < self.weight[choice] / self.max_weight:
                     break
             # r = random.random()*self.total_weight
             # for item in self.items:
@@ -215,9 +145,8 @@ class _ListDict_(object):
         else:
             return random.choice(self.items)
 
-
     def random_removal(self):
-        r'''uses other class methods to choose and then remove a random node'''
+        r"""uses other class methods to choose and then remove a random node"""
         choice = self.choose_random()
         self.remove(choice)
         return choice
@@ -227,8 +156,10 @@ class _ListDict_(object):
             return self._total_weight
         else:
             return len(self)
+
     def update_total_weight(self):
         self._total_weight = sum(self.weight[item] for item in self.items)
+
 
 ##########################
 #                        #
@@ -236,12 +167,25 @@ class _ListDict_(object):
 #                        #
 ##########################
 
-'''
+"""
     The code in the region below is used for stochastic simulation of
     epidemics on networks
-'''
+"""
 
-def discrete_SIS(H, tau, gamma, transmission_function=threshold, initial_infecteds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, **args):
+def discrete_SIS(
+    H,
+    tau,
+    gamma,
+    transmission_function=threshold,
+    initial_infecteds=None,
+    recovery_weight=None,
+    transmission_weight=None,
+    rho=None,
+    tmin=0,
+    tmax=float("Inf"),
+    dt=1.0,
+    **args
+):
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -252,63 +196,90 @@ def discrete_SIS(H, tau, gamma, transmission_function=threshold, initial_infecte
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes()*rho))
-        initial_infecteds=random.sample(H.nodeLabels, initial_number)        
+            initial_number = int(round(H.number_of_nodes() * rho))
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if transmission_weight is not None:
+
         def edgeweight(item):
             return item[transmission_weight]
+
     else:
+
         def edgeweight(item):
             return 1
 
     if recovery_weight is not None:
+
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
+
     else:
+
         def nodeweight(u):
             return 1
 
-    status = defaultdict(lambda : 'S')
+    status = defaultdict(lambda: "S")
     for node in initial_infecteds:
-        status[node] = 'I'
+        status[node] = "I"
 
     I = [len(initial_infecteds)]
-    S = [H.number_of_nodes()-I[0]]
+    S = [H.number_of_nodes() - I[0]]
     times = [tmin]
     t = tmin
-    newStatus = status
+    new_status = status
 
     while t <= tmax and I[-1] != 0:
         S.append(S[-1])
         I.append(I[-1])
 
-        for node in H.nodeLabels:
+        for node in H.nodes:
             if status[node] == "I":
                 # heal
-                if random.random() <= gamma*dt*nodeweight(node):
-                    newStatus[node] = "S"
+                if random.random() <= gamma * dt * nodeweight(node):
+                    new_status[node] = "S"
                     S[-1] += 1
                     I[-1] += -1
                 else:
-                    newStatus[node] = "I"
+                    new_status[node] = "I"
             else:
                 # infect by neighbors of all sizes
-                for uid, nbrs in H.neighbors[node].items():
-                    if tau[len(nbrs["neighbors"])+1] != 0:
-                        if random.random() <= tau[len(nbrs["neighbors"])+1]*transmission_function(status, nbrs["neighbors"], **args)*dt*edgeweight(nbrs):
-                            newStatus[node] = "I"
+                for edge_id in H.nodes[node]:
+                    edge = H.edges[edge_id]
+                    if tau[len(edge)] > 0:
+                        if random.random() <= tau[len(edge)] * transmission_function(
+                            status, set(edge).difference({node}), **args
+                        ) * dt * edgeweight(
+                            edge_id
+                        ):
+                            new_status[node] = "I"
                             S[-1] += -1
                             I[-1] += 1
                             break
-
-        status = newStatus.copy()
+                else:
+                    new_status[node] == "S"
+        status = new_status.copy()
         t += dt
         times.append(t)
 
     return np.array(times), np.array(S), np.array(I)
 
-def discrete_SIR(H, tau, gamma, transmission_function=collective_contagion, initial_infecteds=None, initial_recovereds=None, recovery_weight=None, transmission_weight = None, rho=None, tmin=0, tmax=float('Inf'), dt=1.0, **args):
+
+def discrete_SIR(
+    H,
+    tau,
+    gamma,
+    transmission_function=threshold,
+    initial_infecteds=None,
+    initial_recovereds=None,
+    recovery_weight=None,
+    transmission_weight=None,
+    rho=None,
+    tmin=0,
+    tmax=float("Inf"),
+    dt=1.0,
+    **args
+):
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -319,340 +290,447 @@ def discrete_SIR(H, tau, gamma, transmission_function=collective_contagion, init
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes()*rho))
-        initial_infecteds=random.sample(H.nodeLabels, initial_number)
+            initial_number = int(round(H.number_of_nodes() * rho))
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
         initial_recovereds = []
 
     if transmission_weight is not None:
+
         def edgeweight(item):
             return item[transmission_weight]
+
     else:
+
         def edgeweight(item):
             return 1
 
     if recovery_weight is not None:
+
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
+
     else:
+
         def nodeweight(u):
             return 1
 
-    status = defaultdict(lambda : 'S')
+    status = defaultdict(lambda: "S")
     for node in initial_infecteds:
-        status[node] = 'I'
+        status[node] = "I"
     for node in initial_recovereds:
-        status[node] = 'R'
-
-    timesteps = int((tmax-tmin)/dt)
+        status[node] = "R"
 
     I = [len(initial_infecteds)]
     R = [len(initial_recovereds)]
-    S = [H.number_of_nodes()-I[0]-R[0]]
+    S = [H.number_of_nodes() - I[0] - R[0]]
     times = [tmin]
     t = tmin
-    newStatus = status
+    new_status = status
 
     while t <= tmax and I[-1] != 0:
         S.append(S[-1])
         I.append(I[-1])
         R.append(R[-1])
 
-        for node in H.nodeLabels:
+        for node in H.nodes:
             if status[node] == "I":
                 # heal
-                if random.random() <= gamma*dt*nodeweight(node):
-                    newStatus[node] = "R"
+                if random.random() <= gamma * dt * nodeweight(node):
+                    new_status[node] = "R"
                     R[-1] += 1
                     I[-1] += -1
                 else:
-                    newStatus[node] = "I"
+                    new_status[node] = "I"
             elif status[node] == "S":
                 # infect by neighbors of all sizes
-                for uid, nbrs in H.neighbors[node].items():
-                    if tau[len(nbrs["neighbors"])+1] != 0:
-                        if random.random() <= tau[len(nbrs["neighbors"])+1]*transmission_function(status, nbrs["neighbors"], **args)*dt*edgeweight(nbrs):
-                            newStatus[node] = "I"
+                for edge_id in H.nodes[node]:
+                    edge = H.edges[edge_id]
+                    if tau[len(edge)] != 0:
+                        if random.random() <= tau[len(edge)] * transmission_function(
+                            status, edge, **args
+                        ) * dt * edgeweight(edge_id):
+                            new_status[node] = "I"
                             S[-1] += -1
                             I[-1] += 1
                             break
                 else:
-                    newStatus[node] == "S"
-        status = newStatus.copy()
+                    new_status[node] == "S"
+        status = new_status.copy()
         t += dt
         times.append(t)
 
     return np.array(times), np.array(S), np.array(I), np.array(R)
 
 
-def Gillespie_SIR(H, tau, gamma, transmission_function=threshold, initial_infecteds=None, initial_recovereds = None, rho = None, tmin = 0, tmax=float('Inf'), recovery_weight = None, transmission_weight = None, **args):
-    if rho is not None and initial_infecteds is not None:
-        raise HyperContagionError("cannot define both initial_infecteds and rho")
+# def Gillespie_SIR(
+#     H,
+#     tau,
+#     gamma,
+#     transmission_function=threshold,
+#     initial_infecteds=None,
+#     initial_recovereds=None,
+#     rho=None,
+#     tmin=0,
+#     tmax=float("Inf"),
+#     recovery_weight=None,
+#     transmission_weight=None,
+#     **args
+# ):
+#     if rho is not None and initial_infecteds is not None:
+#         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
-    if transmission_weight is not None:
-        def edgeweight(item):
-            return item[transmission_weight]
-    else:
-        def edgeweight(item):
-            return None
+#     if transmission_weight is not None:
 
-    if recovery_weight is not None:
-        def nodeweight(u):
-            return H.nodes[u][recovery_weight]
-    else:
-        def nodeweight(u):
-            return None
+#         def edgeweight(item):
+#             return item[transmission_weight]
 
-    if initial_infecteds is None:
-        if rho is None:
-            initial_number = 1
-        else:
-            initial_number = int(round(H.number_of_nodes()*rho))
-        initial_infecteds=random.sample(H.nodeLabels, initial_number)
+#     else:
 
-    if initial_recovereds is None:
-        initial_recovereds = []
+#         def edgeweight(item):
+#             return None
 
-    I = [len(initial_infecteds)]
-    R = [len(initial_recovereds)]
-    S = [H.number_of_nodes()-I[0]-R[0]]
-    times = [tmin]
+#     if recovery_weight is not None:
 
-    transmissions = []
-    t = tmin
+#         def nodeweight(u):
+#             return H.nodes[u][recovery_weight]
 
-    status = defaultdict(lambda : 'S')
-    for node in initial_infecteds:
-        status[node] = 'I'
-    for node in initial_recovereds:
-        status[node] = 'R'
-    if recovery_weight is None:
-        infecteds = _ListDict_()
-    else:
-        infecteds = _ListDict_(weighted=True)
+#     else:
 
-    IS_links = dict()
-    for size in H.getHyperedgeSizes():
-        if transmission_weight is None:
-            IS_links[size] = _ListDict_()
-        else:
-            IS_links[size] = _ListDict_(weighted=True)
+#         def nodeweight(u):
+#             return None
 
-    for node in initial_infecteds:
-        infecteds.update(node, weight_increment = nodeweight(node))
-        for uid, nbrData in H.neighbors[node].items():  #must have this in a separate loop after assigning status of node
-        # handle weighted vs. unweighted?
-            for nbr in nbrData["neighbors"]: # there may be self-loops so account for this later
-                if status[nbr] == 'S':
-                    contagion = transmission_function(status, H.neighbors[nbr][uid]["neighbors"], **args)
-                    if contagion != 0:
-                        IS_links[len(nbrData["neighbors"])+1].update((H.neighbors[nbr][uid]["neighbors"], nbr), weight_increment=edgeweight(nbrData)) # need to be able to multiply by the contagion?
+#     if initial_infecteds is None:
+#         if rho is None:
+#             initial_number = 1
+#         else:
+#             initial_number = int(round(H.number_of_nodes() * rho))
+#         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
-    total_rates = dict()
-    total_rates[1] = gamma*infecteds.total_weight()#I_weight_sum
-    for size in H.getHyperedgeSizes():
-        total_rates[size] = tau[size]*IS_links[size].total_weight() #IS_weight_sum
+#     if initial_recovereds is None:
+#         initial_recovereds = []
 
-    total_rate = sum(total_rates.values())
+#     I = [len(initial_infecteds)]
+#     R = [len(initial_recovereds)]
+#     S = [H.number_of_nodes() - I[0] - R[0]]
+#     times = [tmin]
 
-    delay = random.expovariate(total_rate)
-    t += delay
+#     transmissions = []
+#     t = tmin
 
-    while infecteds and t<tmax:
-        while True:
-            choice = random.choice(list(total_rates.keys())) # Is there a faster way to do this?
-            if random.random() < total_rates[choice]/total_rate:
-                break
-        if choice == 1: #recover
-            recovering_node = infecteds.random_removal() #does weighted choice and removes it
-            status[recovering_node]='R'
+#     status = defaultdict(lambda: "S")
+#     for node in initial_infecteds:
+#         status[node] = "I"
+#     for node in initial_recovereds:
+#         status[node] = "R"
+#     if recovery_weight is None:
+#         infecteds = _ListDict_()
+#     else:
+#         infecteds = _ListDict_(weighted=True)
 
-            for uid, nbrData in H.neighbors[recovering_node].items():
-                for nbr in nbrData["neighbors"]:
-                    if status[nbr] == 'S' and (H.neighbors[nbr][uid]["neighbors"], nbr) in IS_links[len(nbrData["neighbors"])+1]:
-                        contagion = transmission_function(status, H.neighbors[nbr][uid]["neighbors"], **args)
-                        if contagion == 0:
-                            try:
-                                IS_links[len(nbrData["neighbors"])+1].remove((H.neighbors[nbr][uid]["neighbors"], nbr))
-                            except:
-                                pass
+#     IS_links = dict()
+#     for size in H.getHyperedgeSizes():
+#         if transmission_weight is None:
+#             IS_links[size] = _ListDict_()
+#         else:
+#             IS_links[size] = _ListDict_(weighted=True)
 
-            times.append(t)
-            S.append(S[-1])
-            I.append(I[-1]-1)
-            R.append(R[-1]+1)
-        else: #transmit
-            transmitter, recipient = IS_links[choice].choose_random() #we don't use remove since that complicates the later removal of edges.
-            status[recipient] = 'I'
-            
-            infecteds.update(recipient, weight_increment = nodeweight(recipient))
+#     for node in initial_infecteds:
+#         infecteds.update(node, weight_increment=nodeweight(node))
+#         for uid, nbrData in H.neighbors[
+#             node
+#         ].items():  # must have this in a separate loop after assigning status of node
+#             # handle weighted vs. unweighted?
+#             for nbr in nbrData[
+#                 "neighbors"
+#             ]:  # there may be self-loops so account for this later
+#                 if status[nbr] == "S":
+#                     contagion = transmission_function(
+#                         status, H.neighbors[nbr][uid]["neighbors"], **args
+#                     )
+#                     if contagion != 0:
+#                         IS_links[len(nbrData["neighbors"]) + 1].update(
+#                             (H.neighbors[nbr][uid]["neighbors"], nbr),
+#                             weight_increment=edgeweight(nbrData),
+#                         )  # need to be able to multiply by the contagion?
 
-            for uid, nbrData in H.neighbors[recipient].items():
-                try:
-                    IS_links[len(nbrData["neighbors"])+1].remove((nbrData["neighbors"], recipient)) # multiply by contagion?
-                except:
-                    pass
+#     total_rates = dict()
+#     total_rates[1] = gamma * infecteds.total_weight()  # I_weight_sum
+#     for size in H.getHyperedgeSizes():
+#         total_rates[size] = tau[size] * IS_links[size].total_weight()  # IS_weight_sum
 
-            for uid, nbrData in H.neighbors[recipient].items():
-                for nbr in nbrData["neighbors"]:
-                    if status[nbr] == 'S':
-                        contagion = transmission_function(status, H.neighbors[nbr][uid]["neighbors"], **args)
-                        if contagion != 0:
-                            IS_links[len(nbrData["neighbors"])+1].update((H.neighbors[nbr][uid]["neighbors"], nbr), weight_increment = edgeweight(nbrData))
+#     total_rate = sum(total_rates.values())
 
-            times.append(t)
-            S.append(S[-1]-1)
-            I.append(I[-1]+1)
-            R.append(R[-1])
+#     delay = random.expovariate(total_rate)
+#     t += delay
 
-        total_rates[1] = gamma*infecteds.total_weight()#I_weight_sum
-        for size in H.getHyperedgeSizes():
-            total_rates[size] = tau[size]*IS_links[size].total_weight() #IS_weight_sum
+#     while infecteds and t < tmax:
+#         while True:
+#             choice = random.choice(
+#                 list(total_rates.keys())
+#             )  # Is there a faster way to do this?
+#             if random.random() < total_rates[choice] / total_rate:
+#                 break
+#         if choice == 1:  # recover
+#             recovering_node = (
+#                 infecteds.random_removal()
+#             )  # does weighted choice and removes it
+#             status[recovering_node] = "R"
 
-        total_rate = sum(total_rates.values())
-        if total_rate>0:
-            delay = random.expovariate(total_rate)
-        else:
-            delay = float('Inf')
-        t += delay
+#             for uid, nbrData in H.neighbors[recovering_node].items():
+#                 for nbr in nbrData["neighbors"]:
+#                     if (
+#                         status[nbr] == "S"
+#                         and (H.neighbors[nbr][uid]["neighbors"], nbr)
+#                         in IS_links[len(nbrData["neighbors"]) + 1]
+#                     ):
+#                         contagion = transmission_function(
+#                             status, H.neighbors[nbr][uid]["neighbors"], **args
+#                         )
+#                         if contagion == 0:
+#                             try:
+#                                 IS_links[len(nbrData["neighbors"]) + 1].remove(
+#                                     (H.neighbors[nbr][uid]["neighbors"], nbr)
+#                                 )
+#                             except:
+#                                 pass
 
-    return np.array(times), np.array(S), np.array(I), np.array(R)
-    
-def Gillespie_SIS(H, tau, gamma, transmission_function=threshold, initial_infecteds=None, rho=None, tmin=0, tmax=100, recovery_weight=None, transmission_weight=None, **args):
-    if rho is not None and initial_infecteds is not None:
-        raise HyperContagionError("cannot define both initial_infecteds and rho")
+#             times.append(t)
+#             S.append(S[-1])
+#             I.append(I[-1] - 1)
+#             R.append(R[-1] + 1)
+#         else:  # transmit
+#             transmitter, recipient = IS_links[
+#                 choice
+#             ].choose_random()  # we don't use remove since that complicates the later removal of edges.
+#             status[recipient] = "I"
 
-    if transmission_weight is not None:
-        def edgeweight(item):
-            return item[transmission_weight]
-    else:
-        def edgeweight(item):
-            return None
+#             infecteds.update(recipient, weight_increment=nodeweight(recipient))
 
-    if recovery_weight is not None:
-        def nodeweight(u):
-            return H.nodes[u][recovery_weight]
-    else:
-        def nodeweight(u):
-            return None
+#             for uid, nbrData in H.neighbors[recipient].items():
+#                 try:
+#                     IS_links[len(nbrData["neighbors"]) + 1].remove(
+#                         (nbrData["neighbors"], recipient)
+#                     )  # multiply by contagion?
+#                 except:
+#                     pass
 
-    if initial_infecteds is None:
-        if rho is None:
-            initial_number = 1
-        else:
-            initial_number = int(round(H.number_of_nodes()*rho))
-        initial_infecteds=random.sample(H.nodeLabels, initial_number)
+#             for uid, nbrData in H.neighbors[recipient].items():
+#                 for nbr in nbrData["neighbors"]:
+#                     if status[nbr] == "S":
+#                         contagion = transmission_function(
+#                             status, H.neighbors[nbr][uid]["neighbors"], **args
+#                         )
+#                         if contagion != 0:
+#                             IS_links[len(nbrData["neighbors"]) + 1].update(
+#                                 (H.neighbors[nbr][uid]["neighbors"], nbr),
+#                                 weight_increment=edgeweight(nbrData),
+#                             )
 
-    I = [len(initial_infecteds)]
-    S = [H.number_of_nodes()-I[0]]
-    times = [tmin]
+#             times.append(t)
+#             S.append(S[-1] - 1)
+#             I.append(I[-1] + 1)
+#             R.append(R[-1])
 
-    t = tmin
-    transmissions = []
+#         total_rates[1] = gamma * infecteds.total_weight()  # I_weight_sum
+#         for size in H.getHyperedgeSizes():
+#             total_rates[size] = (
+#                 tau[size] * IS_links[size].total_weight()
+#             )  # IS_weight_sum
 
-    status = defaultdict(lambda : 'S')
-    for node in initial_infecteds:
-        status[node] = 'I'
+#         total_rate = sum(total_rates.values())
+#         if total_rate > 0:
+#             delay = random.expovariate(total_rate)
+#         else:
+#             delay = float("Inf")
+#         t += delay
 
-    if recovery_weight is None:
-        infecteds = _ListDict_()
-    else:
-        infecteds = _ListDict_(weighted=True)
+#     return np.array(times), np.array(S), np.array(I), np.array(R)
 
-    IS_links = dict()
-    for size in H.getHyperedgeSizes():
-        if transmission_weight is None:
-            IS_links[size] = _ListDict_()
-        else:
-            IS_links[size] = _ListDict_(weighted=True)
 
-    for node in initial_infecteds:
-        infecteds.update(node, weight_increment = nodeweight(node))
-        for uid, nbrData in H.neighbors[node].items():  #must have this in a separate loop after assigning status of node
-        # handle weighted vs. unweighted?
-            for nbr in nbrData["neighbors"]: # there may be self-loops so account for this later
-                if status[nbr] == 'S':
-                    contagion = transmission_function(status, H.neighbors[nbr][uid]["neighbors"], **args)
-                    if contagion != 0:
-                        IS_links[len(nbrData["neighbors"])+1].update((H.neighbors[nbr][uid]["neighbors"], nbr), weight_increment=edgeweight(nbrData)) # need to be able to multiply by the contagion?
+# def Gillespie_SIS(
+#     H,
+#     tau,
+#     gamma,
+#     transmission_function=threshold,
+#     initial_infecteds=None,
+#     rho=None,
+#     tmin=0,
+#     tmax=100,
+#     recovery_weight=None,
+#     transmission_weight=None,
+#     **args
+# ):
+#     if rho is not None and initial_infecteds is not None:
+#         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
-    total_rates = dict()
-    total_rates[1] = gamma*infecteds.total_weight()#I_weight_sum
-    for size in H.getHyperedgeSizes():
-        total_rates[size] = tau[size]*IS_links[size].total_weight() #IS_weight_sum
+#     if transmission_weight is not None:
 
-    total_rate = sum(total_rates.values())
+#         def edgeweight(item):
+#             return item[transmission_weight]
 
-    delay = random.expovariate(total_rate)
-    t += delay
+#     else:
 
-    while infecteds and t < tmax:
-        # rejection sampling
-        while True:
-            choice = random.choice(list(total_rates.keys()))
-            if random.random() < total_rates[choice]/total_rate:
-                break
+#         def edgeweight(item):
+#             return None
 
-        if choice == 1: #recover
-            recovering_node = infecteds.random_removal() # chooses a node at random and removes it
-            status[recovering_node] = 'S'
+#     if recovery_weight is not None:
 
-            # Find the SI links for the recovered node to get reinfected
-            for uid, nbrData in H.neighbors[recovering_node].items():
-                # if recipient in set(nbrData["neighbors"]):  #move past self edges
-                #     continue
-                # Not sure about this...
-                contagion =  transmission_function(status, nbrData["neighbors"], **args)
-                if contagion != 0:
-                    IS_links[len(nbrData["neighbors"])+1].update((nbrData["neighbors"], recovering_node), weight_increment = edgeweight(nbrData))
+#         def nodeweight(u):
+#             return H.nodes[u][recovery_weight]
 
-            # reduce the number of infected links because of the healing
-            for uid, nbrData in H.neighbors[recovering_node].items():
-                for nbr in nbrData["neighbors"]:
-                    if status[nbr] == 'S' and (H.neighbors[nbr][uid]["neighbors"], nbr) in IS_links[len(nbrData["neighbors"])+1]: # if the key doesn't exist, don't attempt to remove it
-                        contagion = transmission_function(status, H.neighbors[nbr][uid]["neighbors"], **args)
-                        if contagion == 0:
-                            try:
-                                IS_links[len(nbrData["neighbors"])+1].remove((H.neighbors[nbr][uid]["neighbors"], nbr)) # should this be "update" instead of "remove"?
-                            except:
-                                pass
+#     else:
 
-            times.append(t)
-            S.append(S[-1]+1)
-            I.append(I[-1]-1)
-        else:
-            transmitter, recipient = IS_links[choice].choose_random()
-            status[recipient]='I'
+#         def nodeweight(u):
+#             return None
 
-            infecteds.update(recipient, weight_increment = nodeweight(recipient))
+#     if initial_infecteds is None:
+#         if rho is None:
+#             initial_number = 1
+#         else:
+#             initial_number = int(round(H.number_of_nodes() * rho))
+#         initial_infecteds = random.sample(H.nodeLabels, initial_number)
 
-            for uid, nbrData in H.neighbors[recipient].items():
-                # if recipient in set(nbrData["neighbors"]):  #move past self edges
-                #     continue
-                # the above line messed up the simulation
-                try:
-                    IS_links[len(nbrData["neighbors"])+1].remove((nbrData["neighbors"], recipient)) # multiply by contagion?
-                except:
-                    pass
+#     I = [len(initial_infecteds)]
+#     S = [H.number_of_nodes() - I[0]]
+#     times = [tmin]
 
-            for uid, nbrData in H.neighbors[recipient].items():
-                for nbr in nbrData["neighbors"]:
-                    if status[nbr] == 'S':
-                        contagion = transmission_function(status, H.neighbors[nbr][uid]["neighbors"], **args)
-                        if contagion != 0:
-                            IS_links[len(nbrData["neighbors"])+1].update((H.neighbors[nbr][uid]["neighbors"], nbr), weight_increment = edgeweight(nbrData))
-            times.append(t)
-            S.append(S[-1]-1)
-            I.append(I[-1]+1)
+#     t = tmin
+#     transmissions = []
 
-        total_rates[1] = gamma*infecteds.total_weight()
-        for size in H.getHyperedgeSizes():
-            total_rates[size] = tau[size]*IS_links[size].total_weight()
-        total_rate = sum(total_rates.values())
-        if total_rate > 0:
-            delay = random.expovariate(total_rate)
-        else:
-            delay = float('Inf')
-        t += delay
-    return np.array(times), np.array(S), np.array(I)
+#     status = defaultdict(lambda: "S")
+#     for node in initial_infecteds:
+#         status[node] = "I"
+
+#     if recovery_weight is None:
+#         infecteds = _ListDict_()
+#     else:
+#         infecteds = _ListDict_(weighted=True)
+
+#     IS_links = dict()
+#     for size in np.unique(list(H.edge_sizes)):
+#         if transmission_weight is None:
+#             IS_links[size] = _ListDict_()
+#         else:
+#             IS_links[size] = _ListDict_(weighted=True)
+
+#     for node in initial_infecteds:
+#         infecteds.update(node, weight_increment=nodeweight(node))
+#         for edges in H.nodes[node]:  # must have this in a separate loop after assigning status of node
+#             # handle weighted vs. unweighted?
+#             for e in edges:  # there may be self-loops so account for this later
+#                 edge = H.edges[e]
+#                 for nbr in set(edge).difference({node}):
+#                     if status[nbr] == "S":
+#                         contagion = transmission_function(node,
+#                         status, edge, **args
+#                     )
+#                     if contagion != 0:
+#                         IS_links[len(edge)].update(
+#                             (H.e, nbr),
+#                             weight_increment=edgeweight(e),
+#                         )  # need to be able to multiply by the contagion?
+
+#     total_rates = dict()
+#     total_rates[1] = gamma * infecteds.total_weight()  # I_weight_sum
+#     for size in H.getHyperedgeSizes():
+#         total_rates[size] = tau[size] * IS_links[size].total_weight()  # IS_weight_sum
+
+#     total_rate = sum(total_rates.values())
+
+#     delay = random.expovariate(total_rate)
+#     t += delay
+
+#     while infecteds and t < tmax:
+#         # rejection sampling
+#         while True:
+#             choice = random.choice(list(total_rates.keys()))
+#             if random.random() < total_rates[choice] / total_rate:
+#                 break
+
+#         if choice == 1:  # recover
+#             recovering_node = (
+#                 infecteds.random_removal()
+#             )  # chooses a node at random and removes it
+#             status[recovering_node] = "S"
+
+#             # Find the SI links for the recovered node to get reinfected
+#             for edges in H.nodes[recovering_node]:
+#                 # if recipient in set(nbrData["neighbors"]):  #move past self edges
+#                 #     continue
+#                 # Not sure about this...
+#                 for e in edges:
+#                     edge = H.edges[e]
+#                     contagion = transmission_function(recovering_node, status, edge, **args)
+#                     if contagion != 0:
+#                         IS_links[len(edge)].update(
+#                         (e, recovering_node),
+#                         weight_increment=edgeweight(e),
+#                     )
+
+#             # reduce the number of infected links because of the healing
+#             for edges in H.nodes[recovering_node]:
+#                 for edge in edges:
+#                 for nbr in nbrData["neighbors"]:
+#                     if (
+#                         status[nbr] == "S"
+#                         and (e, nbr)
+#                         in IS_links[len(nbrData["neighbors"]) + 1]
+#                     ):  # if the key doesn't exist, don't attempt to remove it
+#                         contagion = transmission_function(
+#                             status, H.neighbors[nbr][uid]["neighbors"], **args
+#                         )
+#                         if contagion == 0:
+#                             try:
+#                                 IS_links[len(nbrData["neighbors"]) + 1].remove(
+#                                     (H.neighbors[nbr][uid]["neighbors"], nbr)
+#                                 )  # should this be "update" instead of "remove"?
+#                             except:
+#                                 pass
+
+#             times.append(t)
+#             S.append(S[-1] + 1)
+#             I.append(I[-1] - 1)
+#         else:
+#             transmitter, recipient = IS_links[choice].choose_random()
+#             status[recipient] = "I"
+
+#             infecteds.update(recipient, weight_increment=nodeweight(recipient))
+
+#             for uid, nbrData in H.neighbors[recipient].items():
+#                 # if recipient in set(nbrData["neighbors"]):  #move past self edges
+#                 #     continue
+#                 # the above line messed up the simulation
+#                 try:
+#                     IS_links[len(nbrData["neighbors"]) + 1].remove(
+#                         (nbrData["neighbors"], recipient)
+#                     )  # multiply by contagion?
+#                 except:
+#                     pass
+
+#             for uid, nbrData in H.neighbors[recipient].items():
+#                 for nbr in nbrData["neighbors"]:
+#                     if status[nbr] == "S":
+#                         contagion = transmission_function(
+#                             status, H.neighbors[nbr][uid]["neighbors"], **args
+#                         )
+#                         if contagion != 0:
+#                             IS_links[len(nbrData["neighbors"]) + 1].update(
+#                                 (H.neighbors[nbr][uid]["neighbors"], nbr),
+#                                 weight_increment=edgeweight(nbrData),
+#                             )
+#             times.append(t)
+#             S.append(S[-1] - 1)
+#             I.append(I[-1] + 1)
+
+#         total_rates[1] = gamma * infecteds.total_weight()
+#         for size in H.getHyperedgeSizes():
+#             total_rates[size] = tau[size] * IS_links[size].total_weight()
+#         total_rate = sum(total_rates.values())
+#         if total_rate > 0:
+#             delay = random.expovariate(total_rate)
+#         else:
+#             delay = float("Inf")
+#         t += delay
+#     return np.array(times), np.array(S), np.array(I)
