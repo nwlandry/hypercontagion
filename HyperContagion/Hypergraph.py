@@ -1,6 +1,7 @@
 import random
 import time
 from collections import defaultdict
+import numpy as np
 
 class Hypergraph:
     def __init__(self, hyperedges, weightedEdges=False):

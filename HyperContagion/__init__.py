@@ -1,6 +1,6 @@
-import HyperContagion.simulation
-from HyperContagion.simulation import *
-import HyperContagion.visualization
-from HyperContagion.visualization import *
-import HyperContagion.Hypergraph
-from HyperContagion.Hypergraph import *
+import hypercontagion.simulation
+from hypercontagion.simulation import *
+import hypercontagion.visualization
+from hypercontagion.visualization import *
+import hypercontagion.Hypergraph
+from hypercontagion.Hypergraph import *
