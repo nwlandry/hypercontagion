@@ -7,18 +7,6 @@ from collections import Counter
 from hypercontagion.exception import HyperContagionError, HyperContagionException
 from hypercontagion.simulation.functions import threshold
 
-##########################
-#                        #
-#    SIMULATION CODE     #
-#                        #
-##########################
-
-"""
-    The code in the region below is used for stochastic simulation of
-    epidemics on networks
-"""
-
-
 def discrete_SIS(
     H,
     tau,
@@ -57,12 +45,10 @@ def discrete_SIS(
             return 1
 
     if recovery_weight is not None:
-
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
 
     else:
-
         def nodeweight(u):
             return 1
 
@@ -91,12 +77,12 @@ def discrete_SIS(
                     new_status[node] = "I"
             else:
                 # infect by neighbors of all sizes
-                for edge_id in H.nodes[node]:
-                    edge = H.edges[edge_id]
+                for edge_id in H.nodes.membership(node):
+                    edge = H.edges.members(edge_id)
                     if tau[len(edge)] > 0:
-                        if random.random() <= tau[len(edge)] * transmission_function(
-                            status, set(edge).difference({node}), **args
-                        ) * dt * edgeweight(edge_id):
+                        if random.random() <= tau[len(edge)] \
+                        * transmission_function(node, status, edge, **args) \
+                        * dt * edgeweight(edge_id):
                             new_status[node] = "I"
                             S[-1] += -1
                             I[-1] += 1
@@ -152,12 +138,10 @@ def discrete_SIR(
             return 1
 
     if recovery_weight is not None:
-
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
 
     else:
-
         def nodeweight(u):
             return 1
 
@@ -190,12 +174,12 @@ def discrete_SIR(
                     new_status[node] = "I"
             elif status[node] == "S":
                 # infect by neighbors of all sizes
-                for edge_id in H.nodes[node]:
-                    edge = H.edges[edge_id]
-                    if tau[len(edge)] != 0:
-                        if random.random() <= tau[len(edge)] * transmission_function(
-                            status, edge, **args
-                        ) * dt * edgeweight(edge_id):
+                for edge_id in H.nodes.membership(node):
+                    edge = H.edges.members(edge_id)
+                    if tau[len(edge)] > 0:
+                        if random.random() <= tau[len(edge)] \
+                            * transmission_function(node, status, edge, **args) \
+                            * dt * edgeweight(edge_id):
                             new_status[node] = "I"
                             S[-1] += -1
                             I[-1] += 1

@@ -17,7 +17,11 @@ def individual_contagion(node, status, edge):
 
 def threshold(node, status, edge, threshold=0.5):
     neighbors = set(edge).difference({node})
-    c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)
+    try:
+        c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)
+    except:
+
+        c = 0
     if c < threshold:
         return 0
     elif c >= threshold:
@@ -26,7 +30,10 @@ def threshold(node, status, edge, threshold=0.5):
 
 def majority_vote(node, status, edge):
     neighbors = set(edge).difference({node})
-    c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)
+    try:
+        c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)
+    except:
+        c = 0
     if c < 0.5:
         return 0
     elif c > 0.5:
