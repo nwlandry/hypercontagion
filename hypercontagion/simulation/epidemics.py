@@ -3,8 +3,8 @@ import random
 import numpy as np
 from collections import defaultdict
 from hypercontagion.exception import HyperContagionError
-from hypercontagion.simulation.functions import threshold
-from hypercontagion.utilities import _ListDict_
+from hypercontagion.simulation.functions import majority_vote, threshold
+from hypercontagion.utilities import SamplingDict, EventQueue, _process_trans_SIR_
 import xgi
 
 
@@ -78,7 +78,7 @@ def discrete_SIS(
                     new_status[node] = "I"
             else:
                 # infect by neighbors of all sizes
-                for edge_id in H.nodes.membership(node):
+                for edge_id in H.nodes.memberships(node):
                     edge = H.edges.members(edge_id)
                     if tau[len(edge)] > 0:
                         if random.random() <= tau[len(edge)] \
@@ -175,7 +175,7 @@ def discrete_SIR(
                     new_status[node] = "I"
             elif status[node] == "S":
                 # infect by neighbors of all sizes
-                for edge_id in H.nodes.membership(node):
+                for edge_id in H.nodes.memberships(node):
                     edge = H.edges.members(edge_id)
                     if tau[len(edge)] > 0:
                         if random.random() <= tau[len(edge)] \
@@ -250,21 +250,21 @@ def Gillespie_SIR(
     for node in initial_recovereds:
         status[node] = "R"
     if recovery_weight is None:
-        infecteds = _ListDict_()
+        infecteds = SamplingDict()
     else:
-        infecteds = _ListDict_(weighted=True)
+        infecteds = SamplingDict(weighted=True)
 
     unique_edge_sizes = xgi.unique_edge_sizes(H)
     IS_links = dict()
     for size in unique_edge_sizes:
         if transmission_weight is None:
-            IS_links[size] = _ListDict_()
+            IS_links[size] = SamplingDict()
         else:
-            IS_links[size] = _ListDict_(weighted=True)
+            IS_links[size] = SamplingDict(weighted=True)
 
     for node in initial_infecteds:
         infecteds.update(node, weight_increment=nodeweight(node))
-        for edge_id in H.nodes.membership(node):
+        for edge_id in H.nodes.memberships(node):
             edge = H.edges.members(edge_id)
             for nbr in edge:
                 if status[nbr] == "S":
@@ -301,7 +301,7 @@ def Gillespie_SIR(
             recovering_node = infecteds.random_removal()
             status[recovering_node] = "R"
             
-            for edge_id in H.nodes.membership(recovering_node):
+            for edge_id in H.nodes.memberships(recovering_node):
                 edge = H.edges.members(edge_id)
                 for nbr in edge:
                     if status[nbr] == "S" and (edge_id, nbr) in IS_links[len(edge)]:
@@ -322,13 +322,13 @@ def Gillespie_SIR(
 
             infecteds.update(recipient, weight_increment=nodeweight(recipient))
 
-            for edge_id in H.nodes.membership(recipient):
+            for edge_id in H.nodes.memberships(recipient):
                 try:
                     IS_links[len(H.edges.members(edge_id))].remove((edge_id, recipient))
                 except:
                     pass
 
-            for edge_id in H.nodes.membership(recipient):
+            for edge_id in H.nodes.memberships(recipient):
                 edge = H.edges.members(edge_id)
                 for nbr in edge:
                     if status[nbr] == "S":
@@ -413,22 +413,22 @@ def Gillespie_SIS(
         status[node] = "I"
 
     if recovery_weight is None:
-        infecteds = _ListDict_()
+        infecteds = SamplingDict()
     else:
-        infecteds = _ListDict_(weighted=True)
+        infecteds = SamplingDict(weighted=True)
 
     unique_edge_sizes = xgi.unique_edge_sizes(H)
 
     IS_links = dict()
     for size in unique_edge_sizes:
         if transmission_weight is None:
-            IS_links[size] = _ListDict_()
+            IS_links[size] = SamplingDict()
         else:
-            IS_links[size] = _ListDict_(weighted=True)
+            IS_links[size] = SamplingDict(weighted=True)
 
     for node in initial_infecteds:
         infecteds.update(node, weight_increment=nodeweight(node))
-        for edge_id in H.nodes.membership(node):  # must have this in a separate loop after assigning status of node
+        for edge_id in H.nodes.memberships(node):  # must have this in a separate loop after assigning status of node
             # handle weighted vs. unweighted?
             edge = H.edges.members(edge_id)
             for nbr in edge:  # there may be self-loops so account for this later
@@ -467,7 +467,7 @@ def Gillespie_SIS(
             status[recovering_node] = "S"
 
             # Find the SI links for the recovered node to get reinfected
-            for edge_id in H.nodes.membership(recovering_node):
+            for edge_id in H.nodes.memberships(recovering_node):
                 edge = H.edges.members(edge_id)
                 contagion = transmission_function(recovering_node, status, edge, **args)
                 if contagion != 0:
@@ -477,7 +477,7 @@ def Gillespie_SIS(
                 )
 
             # reduce the number of infected links because of the healing
-            for edge_id in H.nodes.membership(recovering_node):
+            for edge_id in H.nodes.memberships(recovering_node):
                 edge = H.edges.members(edge_id)
                 for nbr in edge:
                     # if the key doesn't exist, don't attempt to remove it
@@ -500,17 +500,17 @@ def Gillespie_SIS(
 
             infecteds.update(recipient, weight_increment=nodeweight(recipient))
 
-            for edge_id in H.nodes.membership(recipient):
+            for edge_id in H.nodes.memberships(recipient):
                 try:
                     IS_links[len(H.edges.members(edge_id))].remove((edge_id, recipient))
                 except:
                     pass
 
-            for edge_id in H.nodes.membership(recipient):
+            for edge_id in H.nodes.memberships(recipient):
                 edge = H.edges.members(edge_id)
                 for nbr in edge:
                     if status[nbr] == "S":
-                        contagion = transmission_function(node, status, edge, **args)
+                        contagion = transmission_function(nbr, status, edge, **args)
                         if contagion != 0:
                             IS_links[len(edge)].update(
                                 (edge_id, nbr),
@@ -530,3 +530,68 @@ def Gillespie_SIS(
             delay = float("Inf")
         t += delay
     return np.array(times), np.array(S), np.array(I)
+
+
+def event_driven_SIR(
+    H,
+    tau,
+    gamma,
+    transmission_function=majority_vote,
+    initial_infecteds=None,
+    initial_recovereds=None,
+    rho=None,
+    tmin=0,
+    tmax=float("Inf"),
+    **args
+):
+    if rho is not None and initial_infecteds is not None:
+        raise HyperContagionError("cannot define both initial_infecteds and rho")
+
+    #now we define the initial setup.
+    status = defaultdict(lambda: 'S') #node status defaults to 'S'
+    rec_time = defaultdict(lambda: tmin-1) #node recovery time defaults to -1
+    if initial_recovereds is not None:
+        for node in initial_recovereds:
+            status[node] = 'R'
+            rec_time[node] = tmin-1 #default value for these.  Ensures that the recovered nodes appear with a time
+    pred_inf_time = defaultdict(lambda: float('Inf')) 
+    #infection time defaults to \infty  --- this could be set to tmax, 
+    #probably with a slight improvement to performance.
+    
+    Q = EventQueue(tmax)
+
+    if initial_infecteds is None:
+        if rho is None:
+            initial_number = 1
+        else:
+            initial_number = int(round(H.number_of_nodes() * rho))
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
+
+    if initial_recovereds is None:
+        initial_recovereds = []
+
+    I = [0]
+    R = [0]
+    S = [H.number_of_nodes()]
+    times = [tmin]
+    events = list()
+    
+    for u in initial_infecteds:
+        pred_inf_time[u] = tmin
+        Q.add(tmin, _process_trans_SIR_, args=(times, S, I, R, Q,
+        H, status, transmission_function, gamma, tau, None, u,
+        rec_time, pred_inf_time, events))
+    
+    while Q:  #all the work is done in this while loop.
+        Q.pop_and_run()
+
+    #the initial infections were treated as ordinary infection events at 
+    #time 0.
+    #So each initial infection added an entry at time 0 to lists.
+    #We'd like to get rid these excess events.
+    times = times[len(initial_infecteds):]
+    S=S[len(initial_infecteds):]
+    I=I[len(initial_infecteds):]
+    R=R[len(initial_infecteds):]
+
+    return np.array(times), np.array(S), np.array(I), np.array(R) 

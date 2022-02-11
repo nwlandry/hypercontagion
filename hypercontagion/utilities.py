@@ -6,8 +6,50 @@ github.com/gstonge/SamplableSet but is less efficient.
 import numpy as np
 import random
 from collections import defaultdict, Counter
+import heapq
 
-class _ListDict_(object):
+
+
+class EventQueue:
+    r'''
+    This class is used to store and act on a priority queue of events for 
+    event-driven simulations.  It is based on heapq.
+    Each queue is given a tmax (default is infinity) so that any event at later 
+    time is ignored.
+    
+    This is a priority queue of 4-tuples of the form 
+                   ``(t, counter, function, function_arguments)``
+    The ``'counter'`` is present just to break ties, which generally only occur when 
+    multiple events are put in place for the initial condition, but could also 
+    occur in cases where events tend to happen at discrete times.
+    note that the function is understood to have its first argument be t, and 
+    the tuple ``function_arguments`` does not include this first t.
+    So function is called as 
+        ``function(t, *function_arguments)``
+    Previously I used a class of events, but sorting using the __lt__ function 
+    I wrote was significantly slower than simply using tuples.
+    '''
+    def __init__(self, tmax=float("Inf")):
+        self._Q_ = []
+        self.tmax=tmax
+        self.counter = 0 #tie-breaker for putting things in priority queue
+    def add(self, time, function, args = ()):
+        r'''time is the time of the event.  args are the arguments of the
+        function not including the first argument which must be time'''
+        if time<self.tmax:   
+            heapq.heappush(self._Q_, (time, self.counter, function, args))
+            self.counter += 1
+    def pop_and_run(self):
+        r'''Pops the next event off the queue and performs the function'''
+        t, counter, function, args = heapq.heappop(self._Q_)
+        function(t, *args)
+    def __len__(self): 
+        r'''this will allow us to use commands like ``while Q:`` '''
+        return len(self._Q_)
+
+
+
+class SamplingDict:
     r"""
     The Gillespie algorithm will involve a step that samples a random element
     from a set based on its weight.  This is awkward in Python.
@@ -301,49 +343,54 @@ class MockSamplableSet:
 
 
 
-if __name__ == "__main__":    # pragma: no cover
-
-    s = MockSamplableSet(1.0,2.0,{0:1.2,3:1.8,})
-
-    print('===========')
-    print(s.items)
-    print(s.weights)
-    print(len(s))
-    print(s.total_weight())
-
-    np.random.seed(1)
-    print('===========')
-    for _ in range(5):
-        print(s.sample())
 
 
-    print('===========')
-    print(s[0])
-    print(s[0])
+def _process_trans_SIR_(time, times, S, I, R, Q, H, status, transmission_function, gamma, tau, source, target, 
+                            rec_time, pred_inf_time, events):
+    
+    if status[target] == 'S':  #nothing happens if already infected.
+        status[target] = 'I'
+        times.append(time)
+        events.append((time, source, target, "S", "I"))
+        S.append(S[-1]-1) #one less susceptible
+        I.append(I[-1]+1) #one more infected
+        R.append(R[-1])   #no change to recovered
+                                
+        rec_time[target] = time + rec_delay(gamma)
+        if rec_time[target]<=Q.tmax:
+            Q.add(rec_time[target], _process_rec_SIR_, 
+                            args = (times, S, I, R, status, target, events))
 
-    s[0] = 2
-    print('===========')
-    print(s.items)
-    print(s.weights)
-    print(s.total_weight())
+        for edge_id in H.nodes.memberships(target):
+            edge = H.edges.members(edge_id)
+            for nbr in edge:
+                if status[nbr] == "S":
+                    inf_time = time + trans_delay(tau, edge)
 
-    s[1] = 1.3
-    print('===========')
-    print(s.items)
-    print(s.weights)
-    print(s.total_weight())
+                    # create statuses at the time requested
+                    temp_status = defaultdict(lambda : "R")
+                    for node in edge:
+                        if status[node] == "I" and rec_time[node] > inf_time:
+                            temp_status[node] = "I"
+                        elif status[node] == "S":
+                            temp_status[node] = "S"
+                    
+                        contagion = transmission_function(nbr, temp_status, edge)
+                        if contagion != 0 and inf_time < pred_inf_time[nbr]:
+                            Q.add(inf_time, _process_trans_SIR_, args=(times, S, I, R, Q, H, status, transmission_function, gamma, tau, edge_id, nbr, rec_time, pred_inf_time, events))
+                            pred_inf_time[nbr] = inf_time
+                                        
+        
+def _process_rec_SIR_(time, times, S, I, R, status, node, events):
+    times.append(time)
+    events.append((time, None, node, "I", "R"))
+    S.append(S[-1])   #no change to number susceptible
+    I.append(I[-1] - 1) #one less infected
+    R.append(R[-1] + 1) #one more recovered
+    status[node] = 'R'
 
-    del s[3]
-    print('===========')
-    print(s.items)
-    print(s.weights)
-    print(s.total_weight())
+def rec_delay(rate):
+    return random.expovariate(rate)
 
-    print('===========')
-    for item, weight in s:
-        print(item, weight)
-
-    print('===========')
-    print(0 in s)
-    print(45 in s)
-
+def trans_delay(tau, edge):
+    return random.expovariate(tau[len(edge)])
