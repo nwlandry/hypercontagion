@@ -342,9 +342,6 @@ class MockSamplableSet:
         pass
 
 
-
-
-
 def _process_trans_SIR_(time, times, S, I, R, Q, H, status, transmission_function, gamma, tau, source, target, 
                             rec_time, pred_inf_time, events):
     
@@ -357,7 +354,7 @@ def _process_trans_SIR_(time, times, S, I, R, Q, H, status, transmission_functio
         R.append(R[-1])   #no change to recovered
                                 
         rec_time[target] = time + rec_delay(gamma)
-        if rec_time[target]<=Q.tmax:
+        if rec_time[target] < Q.tmax:
             Q.add(rec_time[target], _process_rec_SIR_, 
                             args = (times, S, I, R, status, target, events))
 
@@ -389,8 +386,53 @@ def _process_rec_SIR_(time, times, S, I, R, status, node, events):
     R.append(R[-1] + 1) #one more recovered
     status[node] = 'R'
 
+def _process_trans_SIS_(time, times, S, I, Q, H, status, transmission_function, gamma, tau, source, target, 
+                            rec_time, pred_inf_time, events):
+
+    if status[target] == 'S':
+        status[target] = 'I'
+        events.append((time, source, target, "S", "I"))
+        I.append(I[-1]+1) #one more infected
+        S.append(S[-1]-1) #one less susceptible
+        times.append(time)
+        
+        rec_time[target] = time + rec_delay(gamma)
+        
+        if rec_time[target] < Q.tmax:
+            Q.add(rec_time[target], _process_rec_SIS_, 
+                    args = (times, S, I, status, target, events))
+        
+        for edge_id in H.nodes.memberships(target):
+            edge = H.edges.members(edge_id)
+            for nbr in edge:
+                if status[nbr] == "S":
+                    inf_time = time + trans_delay(tau, edge)
+
+                    # create statuses at the time requested
+                    temp_status = defaultdict(lambda : "S")
+                    for node in edge:
+                        if status[node] == "I" and rec_time[node] >= inf_time:
+                            temp_status[node] = "I"
+                    
+                        contagion = transmission_function(nbr, temp_status, edge)
+                        if contagion != 0 and inf_time < pred_inf_time[nbr]:
+                            Q.add(inf_time, _process_trans_SIS_,
+                            args=(times, S, I, Q, H, status, transmission_function, gamma, tau, edge_id, nbr, rec_time, pred_inf_time, events))
+                            pred_inf_time[nbr] = inf_time
+
+
+def _process_rec_SIS_(time, times, S, I, status, node, events):
+    times.append(time)
+    events.append((time, None, node, "I", "S"))
+    S.append(S[-1] + 1)   #one more susceptible
+    I.append(I[-1] - 1) #one less infected
+    status[node] = 'S'
+
 def rec_delay(rate):
-    return random.expovariate(rate)
+    try:
+        return random.expovariate(rate)
+    except:
+        return float("Inf")
 
 def trans_delay(tau, edge):
     return random.expovariate(tau[len(edge)])
