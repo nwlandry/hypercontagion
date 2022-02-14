@@ -67,17 +67,18 @@ def discrete_SIR(
         status[node] = "I"
 
         if return_event_data:
-            events.append((tmin, None, node, "S", "I"))
+            events.append({"time" : tmin, "source" : None, "target" : node, "old_state" : "S", "new_state" : "I"})
 
     for node in initial_recovereds:
         status[node] = "R"
 
         if return_event_data:
-            events.append((tmin, None, node, "I", "R"))
+            events.append({"time" : tmin, "source" : None, "target" : node, "old_state" : "I", "new_state" : "R"})
+            
     
     if return_event_data:
         for node in set(H.nodes).difference(initial_infecteds).difference(initial_recovereds):
-            events.append((tmin, None, node, "None", "S"))
+            events.append({"time" : tmin, "source" : None, "target" : node, "old_state" : None, "new_state" : "S"})
 
     I = [len(initial_infecteds)]
     R = [len(initial_recovereds)]
@@ -101,7 +102,7 @@ def discrete_SIR(
                     I[-1] += -1
 
                     if return_event_data:
-                        events.append((t, None, node, "I", "R"))
+                        events.append({"time" : t, "source" : None, "target" : node, "old_state" : "I", "new_state" : "R"})
                 else:
                     new_status[node] = "I"
             elif status[node] == "S":
@@ -117,7 +118,7 @@ def discrete_SIR(
                             I[-1] += 1
 
                             if return_event_data:
-                                events.append((t, edge_id, node, "S", "I"))
+                                events.append({"time" : t, "source" : edge_id, "target" : node, "old_state" : "S", "new_state" : "I"})
                             break
                 else:
                     new_status[node] == "S"

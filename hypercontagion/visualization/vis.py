@@ -14,9 +14,8 @@ from pyglet import shapes
 from pyglet.window import key, mouse, Window
 from pyglet.gl import *
 
-from epipack.networks import get_random_layout, get_grid_layout
-from epipack import colors as col
-from epipack.colors import colors
+from hypercontagion.visualization.colors import colors
+import hypercontagion.visualization.colors as cols
 
 _colors = list(colors.values())
 
@@ -549,21 +548,21 @@ class Curve():
 
         self.scale.check_bounds(self.xmin,self.xmax,self.ymin,self.ymax)
 
-def get_network_batch(stylized_network,
+def get_hypergraph_batch(stylized_hypergraph,
                       yoffset,
-                      draw_links=True,
+                      draw_bipartite_edges=True,
                       draw_nodes=True,
-                      draw_nodes_as_rectangles=False,
+                      draw_hyperedges=True,
                       n_circle_segments=16):
     """
-    Create a batch for a network visualization.
+    Create a batch for a hypergraph visualization.
 
     Parameters
     ----------
-    stylized_network : dict
-        The network properties which are returned from the
+    stylized_hypergraph : dict
+        The hypergraph properties which are returned from the
         interactive visualization.
-    draw_links : bool, default : True
+    draw_bipartite_edges : bool, default : True
         Whether the links should be drawn
     draw_nodes : bool, default : True
         Whether the nodes should be drawn
@@ -572,9 +571,9 @@ def get_network_batch(stylized_network,
 
     Returns
     -------
-    network_objects : dict
+    hypergraph_objects : dict
         A dictionary containing all the necessary objects to draw and
-        update the network.
+        update the hypergraph.
         - `lines` : a list of pyglet-line objects (one entry per link)
 
         - `disks` : a list of pyglet-circle objects (one entry per node)
@@ -588,77 +587,79 @@ def get_network_batch(stylized_network,
 
     batch = pyglet.graphics.Batch()
 
-    pos = { node['id']: np.array([node['x_canvas'], node['y_canvas'] + yoffset]) for node in stylized_network['nodes'] }
+    node_pos = { node['id']: np.array([node['x_canvas'], node['y_canvas'] + yoffset]) for node in stylized_hypergraph['nodes'] }
+    hyperedge_pos = { edge['id']: np.array([edge['x_canvas'], edge['y_canvas'] + yoffset]) for edge in stylized_hypergraph['hyperedges'] }
 
     lines = []
     disks = []
     circles = []
-    node_to_lines = { node['id']: [] for node in stylized_network['nodes'] }
 
-    if draw_links:
+    if draw_bipartite_edges:
 
-        for ilink, link in enumerate(stylized_network['links']):
-            u, v = link['source'], link['target']
-            node_to_lines[u].append((v, ilink))
-            node_to_lines[v].append((u, ilink))
+        for link in stylized_hypergraph['bipartite_edges']:
+            u = link['source']
+            v = link['target']
             if 'color' in link.keys():
                 this_color = link['color']
             else:
-                this_color = stylized_network['linkColor']
+                this_color = stylized_hypergraph['link_color']
             lines.append(shapes.Line(
-                pos[u][0],
-                pos[u][1],
-                pos[v][0],
-                pos[v][1],
+                node_pos[u][0],
+                node_pos[u][1],
+                hyperedge_pos[v][0],
+                hyperedge_pos[v][1],
                 width=link['width'],
                 color=tuple(bytes.fromhex(this_color[1:])),
                 batch=batch,
                          )
                     )
-            lines[-1].opacity = int(255*stylized_network['linkAlpha'])
+            lines[-1].opacity = int(255*stylized_hypergraph['link_alpha'])
 
 
     if draw_nodes:
-        disks = [None for n in range(len(stylized_network['nodes']))]
-        circles = [None for n in range(len(stylized_network['nodes']))]
+        disks = [None for n in range(len(stylized_hypergraph['nodes']))]
+        circles = [None for n in range(len(stylized_hypergraph['nodes']))]
 
 
-        for node in stylized_network['nodes']:
-            if not draw_nodes_as_rectangles:
-                disks[node['id']] = \
-                        shapes.Circle(node['x_canvas'],
-                                      node['y_canvas']+yoffset,
-                                      node['radius'],
-                                      segments=n_circle_segments,
-                                      color=tuple(bytes.fromhex(node['color'][1:])),
-                                      batch=batch,
-                                      )
+        for node in stylized_hypergraph['nodes']:
+            disks[node['id']] = \
+                    shapes.Circle(node['x_canvas'],
+                                    node['y_canvas']+yoffset,
+                                    node['radius'],
+                                    segments=n_circle_segments,
+                                    color=tuple(bytes.fromhex(node['color'][1:])),
+                                    batch=batch,
+                                    )
 
-                circles[node['id']] = \
-                        shapes.Arc(node['x_canvas'],
-                                      node['y_canvas']+yoffset,
-                                      node['radius'],
-                                      segments=n_circle_segments+1,
-                                      color=tuple(bytes.fromhex(stylized_network['nodeStrokeColor'][1:])),
-                                      batch=batch,
-                                      )
-            else:
-                r = node['radius']
-                disks[node['id']] = \
-                        shapes.Rectangle(
-                                      node['x_canvas']-r,
-                                      node['y_canvas']+yoffset-r,
-                                      2*r,
-                                      2*r,
-                                      color=tuple(bytes.fromhex(node['color'][1:])),
-                                      batch=batch)
+            circles[node['id']] = \
+                    shapes.Arc(node['x_canvas'],
+                                    node['y_canvas']+yoffset,
+                                    node['radius'],
+                                    segments=n_circle_segments+1,
+                                    color=tuple(bytes.fromhex(stylized_hypergraph['node_stroke_color'][1:])),
+                                    batch=batch,
+                                    )
+    if draw_hyperedges:
+        rectangles = [None for n in range(len(stylized_hypergraph['hyperedges']))]
 
-    return {'lines': lines, 'disks': disks, 'circles':circles, 'node_to_lines': node_to_lines, 'batch': batch}
+        for hyperedge in stylized_hypergraph['hyperedges']:
+            r = hyperedge['radius']
+            rectangles[hyperedge['id']] = \
+            shapes.Rectangle(
+                            node['x_canvas']-r,
+                            node['y_canvas']+yoffset-r,
+                            2*r,
+                            2*r,
+                            color=tuple(bytes.fromhex(node['color'][1:])),
+                            batch=batch)
+
+    return {'lines': lines, 'disks': disks, 'circles':circles, 'rectangles':rectangles, 'batch': batch}
 
 _default_config = {
             'plot_sampled_curve': True,
-            'draw_links':True,
+            'draw_bipartite_edges':True,
             'draw_nodes':True,
+            'draw_hyperedges':True,
             'n_circle_segments':16,
             'plot_height':120,
             'bgcolor':'#253237',
@@ -669,8 +670,7 @@ _default_config = {
             'node_color':'#264653',
             'bound_increase_factor':1.0,
             'update_dt':0.04,
-            'show_curves':True,
-            'draw_nodes_as_rectangles':False,
+            'show_curves':False,
             'show_legend': True,
             'legend_font_color':None,
             'legend_font_size':10,
@@ -688,91 +688,14 @@ _default_config = {
 #        })
 
 
-def visualize(model,
-              network, 
+def visualize(events,
+              hypergraph, 
               sampling_dt,
               ignore_plot_compartments=[],
-              quarantine_compartments=[],
               config=None,
               ):
-    """
-    Start a visualization of a stochastic simulation.
 
-    Parameters
-    ==========
-    model : epipack.stochastic_epi_models.StochasticEpiModel
-        An initialized StochasticEpiModel.
-    network: dict
-        A stylized network in the netwulf-format
-        (see https://netwulf.readthedocs.io/en/latest/python_api/post_back.html)
-        where instead of 'x' and 'y', node positions are saved in 'x_canvas'
-        and 'y_canvas'. Example:
-
-        .. code:: python
-
-            stylized_network = {
-                "xlim": [0, 833],
-                "ylim": [0, 833],
-                "linkAlpha": 0.5,
-                "nodeStrokeWidth": 0.75,
-                "links": [
-                    {"source": 0, "target": 1, "width": 3.0 }
-                ],
-                "nodes": [
-                    {"id": 0,
-                     "x_canvas": 436.0933431058901,
-                     "y_canvas": 431.72418500564186,
-                     "radius": 20
-                     },
-                    {"id": 1,
-                     "x_canvas": 404.62184898400426,
-                     "y_canvas": 394.8158724310507,
-                     "radius": 20
-                     }
-                ]
-            }
-
-    sampling_dt : float 
-        The amount of simulation time that's supposed to pass
-        with a single update.
-    ignore_plot_compartments : list, default = []
-        List of compartment objects that are supposed to be
-        ignored when plotted.
-    quarantine_compartments : list, default = []
-        List of compartment objects that are supposed to be
-        resemble quarantine (i.e. temporarily 
-        losing all connections)
-    config : dict, default = None
-        A dictionary containing all possible configuration
-        options. Entries in this dictionary will overwrite
-        the default config which is 
-
-        .. code:: python
-
-            _default_config = {
-                        'plot_sampled_curve': True,
-                        'draw_links':True,
-                        'draw_nodes':True,
-                        'n_circle_segments':16,
-                        'plot_height':120,
-                        'bgcolor':'#253237',
-                        'curve_stroke_width':4.0,
-                        'node_stroke_width':1.0,
-                        'link_color': '#4b5a62',
-                        'node_stroke_color':'#000000',
-                        'node_color':'#264653',
-                        'bound_increase_factor':1.0,
-                        'update_dt':0.04,
-                        'show_curves':True,
-                        'draw_nodes_as_rectangles':False,
-                        'show_legend': True,
-                        'legend_font_color':'#fafaef',
-                        'legend_font_size':10,
-                        'padding':10,
-                        'compartment_colors':_colors
-                    }
-
-    """
+    dt = sampling_dt
 
     # update the config and compute some helper variables
     cfg = deepcopy(_default_config)
@@ -782,11 +705,11 @@ def visualize(model,
     palette = cfg['palette']
     if type(palette) == str:
         if 'link_color' not in cfg:
-            cfg['link_color'] = col.hex_link_colors[palette]
+            cfg['link_color'] = colors.hex_link_colors[palette]
         if 'bgcolor' not in cfg:
-            cfg['bgcolor'] = col.hex_bg_colors[palette]
+            cfg['bgcolor'] = colors.hex_bg_colors[palette]
         if 'compartment_colors' not in cfg:
-            cfg['compartment_colors'] = [ col.colors[this_color] for this_color in col.palettes[palette] ]
+            cfg['compartment_colors'] = [ cols.colors[this_color] for this_color in cols.palettes[palette] ]
 
     bgcolor = [ _/255 for _ in list(bytes.fromhex(cfg['bgcolor'][1:])) ] + [1.0]
 
@@ -797,10 +720,11 @@ def visualize(model,
         else:
             cfg['legend_font_color'] = '#232323'
 
-    width = network['xlim'][1] - network['xlim'][0]
-    height = network['ylim'][1] - network['ylim'][0]
+    width = hypergraph['width']
+    height = hypergraph['height']
 
-    with_plot = cfg['show_curves'] and set(ignore_plot_compartments) != set(model.compartments)
+    compartments = list({e["new_state"] for e in events})
+    with_plot = cfg['show_curves'] and set(ignore_plot_compartments) != set(compartments) # ensure that all curves are not ignored
 
     if with_plot:
         height += cfg['plot_height']
@@ -813,16 +737,14 @@ def visualize(model,
 
     if with_legend:
         legend_batch = pyglet.graphics.Batch()
-        #x, y = legend.get_location()
-        #legend.set_location(x - width, y)
-        # create a test label to get the actual dimensions
+        
         test_label = pyglet.text.Label('Ag')
         dy = test_label.content_height * 1.1
         del(test_label)
 
         legend_circle_radius = dy/2/2
         distance_between_circle_and_label = 2*legend_circle_radius
-        legend_height = len(model.compartments) * dy + cfg['padding']
+        legend_height = len(compartments) * dy + cfg['padding']
 
         # if legend is shown in concurrence to the plot,
         # move the legend to be on the right hand side of the plot,
@@ -834,7 +756,7 @@ def visualize(model,
 
         max_text_width = 0
         legend_objects = [] # this is a hack so that the garbage collector doesn't delete our stuff 
-        for iC, C in enumerate(model.compartments):
+        for iC, C in enumerate(compartments):
             this_y = legend_y_offset - iC * dy - cfg['padding']
             this_x = width + cfg['padding'] + legend_circle_radius
             label = pyglet.text.Label(str(C),
@@ -848,34 +770,31 @@ def visualize(model,
                               )
             legend_objects.append(label)
 
-            #if not cfg['draw_nodes_as_rectangles']:
-            if True:
-                disk = shapes.Circle(this_x,
-                                      this_y - (dy-1.25*legend_circle_radius)/2,
-                                      legend_circle_radius,
-                                      segments=64,
-                                      color = cfg['compartment_colors'][iC],
-                                      batch=legend_batch,
-                                      )
+            
+            disk = shapes.Circle(this_x,
+                                    this_y - (dy-1.25*legend_circle_radius)/2,
+                                    legend_circle_radius,
+                                    segments=64,
+                                    color = cfg['compartment_colors'][iC],
+                                    batch=legend_batch,
+                                    )
 
-                circle = shapes.Arc(this_x,
-                                      this_y - (dy-1.25*legend_circle_radius)/2,
-                                      legend_circle_radius,
-                                      segments=64+1,
-                                      color=list(bytes.fromhex(cfg['legend_font_color'][1:])),
-                                      batch=legend_batch,
-                                      )
-
-                legend_objects.extend([disk,circle])
-            #else:
-            #    rect = shapes.Rectangle(this_x,
-            #                          this_y - (dy-1.5*legend_circle_radius)/2,
-            #                          2*legend_circle_radius,
-            #                          2*legend_circle_radius,
-            #                          color = _colors[iC],
-            #                          batch=legend_batch,
-            #                          )
-            #    legend_objects.append(rect)
+            circle = shapes.Arc(this_x,
+                                    this_y - (dy-1.25*legend_circle_radius)/2,
+                                    legend_circle_radius,
+                                    segments=64+1,
+                                    color=list(bytes.fromhex(cfg['legend_font_color'][1:])),
+                                    batch=legend_batch,
+                                    )
+        
+            rect = shapes.Rectangle(this_x,
+                                    this_y - (dy-1.5*legend_circle_radius)/2,
+                                    2*legend_circle_radius,
+                                    2*legend_circle_radius,
+                                    color = _colors[iC],
+                                    batch=legend_batch,
+                                    )
+            legend_objects.extend([disk, circle, rect])
 
             max_text_width = max(max_text_width, label.content_width)
 
@@ -887,9 +806,9 @@ def visualize(model,
         # if legend is shown in concurrence to the plot,
         # move the legend to be on the right hand side of the plot,
         # accordingly make the plot narrower and place the legend
-        # directly under the square network plot.
+        # directly under the square hypergraph plot.
         # if not, make the window wider and show the legend on
-        # the right hand side of the network plot.
+        # the right hand side of the hypergraph plot.
         if with_plot:
             for obj in legend_objects:
                 obj.x -= legend_width 
@@ -897,41 +816,40 @@ def visualize(model,
         else:
             width += legend_width
 
-    size = (width, height)
+    size = (int(width), int(height))
 
-
-    # overwrite network style with the epipack default style
-    network['linkColor'] = cfg['link_color']
-    network['nodeStrokeColor'] = cfg['node_stroke_color']
-    for node in network['nodes']:
+    # overwrite hypergraph style with the epipack default style
+    hypergraph['link_color'] = cfg['link_color']
+    hypergraph['node_stroke_color'] = cfg['node_stroke_color']
+    for node in hypergraph['nodes']:
         node['color'] = cfg['node_color']
-    N = len(network['nodes'])
+    N = len(hypergraph['nodes'])
 
-    # get the OpenGL shape objects that comprise the network
-    network_batch = get_network_batch(network,
+    # get the OpenGL shape objects that comprise the hypergraph
+    hypergraph_batch = get_hypergraph_batch(hypergraph,
                                       yoffset=plot_height,
-                                      draw_links=cfg['draw_links'],
+                                      draw_bipartite_edges=cfg['draw_bipartite_edges'],
                                       draw_nodes=cfg['draw_nodes'],
-                                      draw_nodes_as_rectangles=cfg['draw_nodes_as_rectangles'],
+                                      draw_hyperedges=cfg['draw_hyperedges'],
                                       n_circle_segments=cfg['n_circle_segments'],
                                       )
-    lines = network_batch['lines']
-    disks = network_batch['disks']
-    circles = network_batch['circles']
-    node_to_lines = network_batch['node_to_lines']
-    batch = network_batch['batch']
+    lines = hypergraph_batch['lines']
+    disks = hypergraph_batch['disks']
+    circles = hypergraph_batch['circles']
+    rectangles = hypergraph_batch['rectangles']
+    batch = hypergraph_batch['batch']
 
     # initialize a simulation state that has to passed to the app
     # so the app can change simulation parameters
-    simstate = SimulationStatus(len(network['nodes']), sampling_dt)
+    simstate = SimulationStatus(len(hypergraph['nodes']), sampling_dt)
 
     # intialize app
     window = App(*size,simulation_status=simstate,resizable=True)
     glClearColor(*bgcolor)
 
     # handle different strokewidths
-    if 'nodeStrokeWidth' in network:
-        node_stroke_width = network['nodeStrokeWidth'] 
+    if 'node_stroke_width' in hypergraph:
+        node_stroke_width = hypergraph['node_stroke_width'] 
     else:
         node_stroke_width = cfg['node_stroke_width']
 
@@ -944,7 +862,7 @@ def visualize(model,
     def _set_linewidth_legend():
         glLineWidth(1.0)
 
-    # add the network batch with the right function to set the linewidth
+    # add the hypergraph batch with the right function to set the linewidth
     # prior to drawing
     window.add_batch(batch,prefunc=_set_linewidth_nodes)
 
@@ -953,352 +871,87 @@ def visualize(model,
         # prior to drawing
         window.add_batch(legend_batch,prefunc=_set_linewidth_legend)
 
-    # decide whether to plot all measured changes or only discrete-time samples
-    discrete_plot = cfg['plot_sampled_curve']
-
-    # find quarantined compartment ids
-    # This set is needed for filtering later on.
-    quarantined = set(model.get_compartment_id(C) for C in quarantine_compartments)
-
     # initialize time arrays
     t = 0
-    discrete_time = [t]
 
-    # initialize curves
-    if with_plot:
-        # find the maximal value of the
-        # compartments that are meant to be plotted. 
-        # These sets are needed for filtering later on.
-        maxy = max([ model.y0[model.get_compartment_id(C) ] for C in (set(model.compartments) - set(ignore_plot_compartments))])
-        scl = Scale(bound_increase_factor=cfg['bound_increase_factor'])\
-                .extent(0,plot_width,plot_height-cfg['padding'],cfg['padding'])\
-                .domain(0,20*sampling_dt,0,maxy)
-        curves = {}
-        for iC, C in enumerate(model.compartments):
-            if C in ignore_plot_compartments:
-                continue
-            _batch = pyglet.graphics.Batch()
-            window.add_batch(_batch,prefunc=_set_linewidth_curves)
-            y = [np.count_nonzero(model.node_status==model.get_compartment_id(C))]
-            curve = Curve(discrete_time,y,cfg['compartment_colors'][iC],scl,_batch)
-            curves[C] = curve
+    # # initialize curves
+    # if with_plot:
+    #     # find the maximal value of the
+    #     # compartments that are meant to be plotted. 
+    #     # These sets are needed for filtering later on.
+    #     maxy = max([ model.y0[model.get_compartment_id(C) ] for C in (set(model.compartments) - set(ignore_plot_compartments))])
+    #     scl = Scale(bound_increase_factor=cfg['bound_increase_factor'])\
+    #             .extent(0,plot_width,plot_height-cfg['padding'],cfg['padding'])\
+    #             .domain(0,20*sampling_dt,0,maxy)
+    #     curves = {}
+    #     for iC, C in enumerate(model.compartments):
+    #         if C in ignore_plot_compartments:
+    #             continue
+    #         _batch = pyglet.graphics.Batch()
+    #         window.add_batch(_batch,prefunc=_set_linewidth_curves)
+    #         y = [np.count_nonzero(model.node_status==model.get_compartment_id(C))]
+    #         curve = Curve(discrete_time,y,cfg['compartment_colors'][iC],scl,_batch)
+    #         curves[C] = curve
 
     # define the pyglet-App update function that's called on every clock cycle
-    def update(dt):
+    index = 0
+    def update():
 
         # skip if nothing remains to be done
         if simstate.simulation_ended or simstate.paused:
             return
 
-        # get sampling_dt
-        sampling_dt = simstate.sampling_dt
+        new_events = list()
+        while events[index]["time"] <= t and index < len(events):
+            new_events.append(events[index])
+            index += 1
 
-        # Advance the simulation until time sampling_dt.
-        # sim_time is a numpy array including all time values at which
-        # the system state changed. The first entry is the initial state
-        # of the simulation at t = 0 which we will discard later on
-        # the last entry at `sampling_dt` will be missing so we
-        # have to add it later on.
-        # `sim_result` is a dictionary that maps a compartment
-        # to a numpy array containing the compartment counts at
-        # the corresponding time.
-        sim_time, sim_result = model.simulate(sampling_dt,adopt_final_state=True)
-
-        # compare the new node statuses with the old node statuses
-        # and find the nodes that have changed status
-        ndx = np.where(model.node_status != simstate.old_node_status)[0]
 
         # if nothing changed, evaluate the true total event rate
         # and if it's zero, do not do anything anymore
-        did_simulation_end = len(ndx) == 0 and model.get_true_total_event_rate() == 0.0
+        did_simulation_end = len(new_events) == 0 and index >= len(events)
         simstate.set_simulation_status(did_simulation_end)
         if simstate.simulation_ended:
             return
 
         # advance the current time as described above.
         # we save both all time values as well as just the sampled times.
-        this_time = (discrete_time[-1] + sim_time[1:]).tolist() + [discrete_time[-1] + sampling_dt]
-        discrete_time.append(discrete_time[-1] + sampling_dt)
+        t = t + dt
 
-        # if curves are plotted
-        if with_plot:
+        # # if curves are plotted
+        # if with_plot:
 
-            # iterate through result array
-            for k, v in sim_result.items():
-                # skip curves that should be ignored
-                if k in ignore_plot_compartments:
-                    continue
-                # count occurrences of this compartment
-                val = np.count_nonzero(model.node_status==model.get_compartment_id(k))
-                if discrete_plot:
-                    # in case only sampled curves are of interest,
-                    # just add this single value
-                    curves[k].append_single_value(discrete_time[-1], v[-1])
-                else:
-                    # otherwise, append the current value to the exact simulation list
-                    # and append the whole dataset
-                    val = (v[1:].tolist() + [v[-1]])
-                    curves[k].append_list(this_time, val)
+        #     # iterate through result array
+        #     for k, v in sim_result.items():
+        #         # skip curves that should be ignored
+        #         if k in ignore_plot_compartments:
+        #             continue
+        #         # count occurrences of this compartment
+        #         val = np.count_nonzero(model.node_status==model.get_compartment_id(k))
+        #         if discrete_plot:
+        #             # in case only sampled curves are of interest,
+        #             # just add this single value
+        #             curves[k].append_single_value(discrete_time[-1], v[-1])
+        #         else:
+        #             # otherwise, append the current value to the exact simulation list
+        #             # and append the whole dataset
+        #             val = (v[1:].tolist() + [v[-1]])
+        #             curves[k].append_list(this_time, val)
 
 
         # iterate through the nodes that have to be updated
-        for node in ndx:
-            status = model.node_status[node]
+        for event in new_events:
+            new_status = event["new_status"]
+            hyperedge = event["source"]
+            node = event["target"]
+
             if cfg['draw_nodes']:
-                disks[node].color = cfg['compartment_colors'][status]
-
-            # if a node becomes quarantined,
-            # iterate through its attached links (lines)
-            # and switch them off
-            if status in quarantined:
-                for neigh, linkid in node_to_lines[node]:
-                    lines[linkid].visible = False
-            # if it became unquarantined
-            elif simstate.old_node_status[node] in quarantined:
-                # check of the neighbor is unquarantined
-                # and switch on the link if this is the case
-                for neigh, linkid in node_to_lines[node]:
-                    if model.node_status[neigh] not in quarantined:
-                        lines[linkid].visible = True
-
-        # save the current node statuses
-        simstate.update(model.node_status)
+                disks[node].color = cfg['compartment_colors'][new_status]
+            if cfg["draw_hyperedges"] and hyperedge is not None:
+                rectangles[hyperedge].color = cfg['compartment_colors'][new_status]
+        
+        simstate.update()
 
     # schedule the app clock and run the app
-    pyglet.clock.schedule_interval(update, cfg['update_dt'])
-    pyglet.app.run()
-
-
-def visualize_reaction_diffusion(
-              model,
-              network,
-              sampling_dt,
-              node_compartments,
-              value_extent=[0.0,1.0],
-              integrator='euler',
-              n_integrator_midpoints=0,
-              config=None,
-              ):
-    """
-    Start a visualization of a reaction-diffusion simulation.
-
-    Parameters
-    ==========
-    model : :class:`epipack.numeric_matrix_epi_models.MatrixEpiModel
-        An initialized ``MatrixEpiModel``.
-    network: dict
-        A stylized network in the netwulf-format
-        (see https://netwulf.readthedocs.io/en/latest/python_api/post_back.html)
-        where instead of 'x' and 'y', node positions are saved in 'x_canvas'
-        and 'y_canvas'. Example:
-
-        .. code:: python
-
-            stylized_network = {
-                "xlim": [0, 833],
-                "ylim": [0, 833],
-                "linkAlpha": 0.5,
-                "nodeStrokeWidth": 0.75,
-                "links": [
-                    {"source": 0, "target": 1, "width": 3.0 }
-                ],
-                "nodes": [
-                    {"id": 0,
-                     "x_canvas": 436.0933431058901,
-                     "y_canvas": 431.72418500564186,
-                     "radius": 20
-                     },
-                    {"id": 1,
-                     "x_canvas": 404.62184898400426,
-                     "y_canvas": 394.8158724310507,
-                     "radius": 20
-                     }
-                ]
-            }
-
-    sampling_dt : float
-        The amount of simulation time that's supposed to pass
-        with a single update.
-    quarantine_compartments: list
-        List of compartment objects that are supposed to be
-        resemble quarantine (i.e. temporarily
-        losing all connections)
-    node_compartments: list
-        The compartments for which to display the concentrations.
-        Each entry `m` in this list is expected to be a compartment
-        associated with node `m`. this list should therefore
-        be as long as the number of nodes.
-    config : dict, default = None
-        A dictionary containing all possible configuration
-        options. Entries in this dictionary will overwrite
-        the default config which is
-
-        .. code:: python
-
-            _default_config = {
-                        'plot_sampled_curve': True,
-                        'draw_links':True,
-                        'draw_nodes':True,
-                        'n_circle_segments':16,
-                        'plot_height':120,
-                        'bgcolor':'#253237',
-                        'curve_stroke_width':4.0,
-                        'node_stroke_width':1.0,
-                        'link_color': '#4b5a62',
-                        'node_stroke_color':'#000000',
-                        'node_color':'#264653',
-                        'bound_increase_factor':1.0,
-                        'update_dt':0.04,
-                        'show_curves':True,
-                        'draw_nodes_as_rectangles':False,
-                        'show_legend': True,
-                        'legend_font_color':'#fafaef',
-                        'legend_font_size':10,
-                        'padding':10,
-                        'compartment_colors':_colors
-                    }
-
-    """
-
-    # update the config and compute some helper variables
-    cfg = deepcopy(_default_config)
-    if config is not None:
-        cfg.update(config)
-
-    bgcolor = [ _/255 for _ in list(bytes.fromhex(cfg['bgcolor'][1:])) ] + [1.0]
-
-    width = network['xlim'][1] - network['xlim'][0]
-    height = network['ylim'][1] - network['ylim'][0]
-
-    size = (width, height)
-
-
-
-    # overwrite network style with the epipack default style
-    network['linkColor'] = cfg['link_color']
-    network['nodeStrokeColor'] = cfg['node_stroke_color']
-    for node in network['nodes']:
-        node['color'] = col.hex_bg_colors['light']
-    N = len(network['nodes'])
-
-    # get the OpenGL shape objects that comprise the network
-    network_batch = get_network_batch(network,
-                                      yoffset=0,
-                                      draw_links=cfg['draw_links'],
-                                      draw_nodes=cfg['draw_nodes'],
-                                      draw_nodes_as_rectangles=cfg['draw_nodes_as_rectangles'],
-                                      n_circle_segments=cfg['n_circle_segments'],
-                                      )
-    lines = network_batch['lines']
-    disks = network_batch['disks']
-    circles = network_batch['circles']
-    node_to_lines = network_batch['node_to_lines']
-    batch = network_batch['batch']
-
-    # initialize a simulation state that has to passed to the app
-    # so the app can change simulation parameters
-    simstate = SimulationStatus(len(network['nodes']), sampling_dt)
-
-    # intialize app
-    window = App(*size,simulation_status=simstate,resizable=True)
-    glClearColor(*bgcolor)
-
-    # handle different strokewidths
-    if 'nodeStrokeWidth' in network:
-        node_stroke_width = network['nodeStrokeWidth']
-    else:
-        node_stroke_width = cfg['node_stroke_width']
-
-    def _set_linewidth_nodes():
-        glLineWidth(node_stroke_width)
-
-    # add the network batch with the right function to set the linewidth
-    # prior to drawing
-    window.add_batch(batch,prefunc=_set_linewidth_nodes)
-
-    # initialize time arrays
-    t = 0
-    discrete_time = [t]
-
-    _cmin, _cmax = value_extent
-    if not callable(_cmin):
-        cmin = lambda _: _cmin
-    else:
-        cmin = _cmin
-    if not callable(_cmax):
-        cmax = lambda _: _cmax
-    else:
-        cmax = _cmax
-    def _get_opacity(val,this_cmin,this_cmax):
-        opacity = (val-this_cmin)/(this_cmax-this_cmin) + this_cmin
-        if opacity > 1.0:
-            opacity = 1.0
-        if opacity < 0.0:
-            opacity = 0.0
-        return int(255*opacity)
-
-    try:
-        node_compartment_indices = np.array([ model.get_compartment_id(C) for C in node_compartments ])
-    except AttributeError as e:
-        node_compartment_indices = np.array(node_compartments)
-
-    this_cmin, this_cmax = cmin(model.y0), cmax(model.y0)
-    for node, idx in enumerate(node_compartment_indices):
-        concentration = model.y0[idx]
-        disks[node].opacity = _get_opacity(concentration, this_cmin, this_cmax)
-
-    # define the pyglet-App update function that's called on every clock cycle
-    def update(dt):
-
-        # skip if nothing remains to be done
-        if simstate.simulation_ended or simstate.paused:
-            return
-
-        # get sampling_dt
-        sampling_dt = simstate.sampling_dt
-
-        # Advance the simulation until time sampling_dt.
-        # `sim_result` is a two-dimensional array
-        # where index sim_result[iC, iT] gives the
-        # concentration of compartment iC at time iT
-        this_t = np.linspace(0, sampling_dt, n_integrator_midpoints+2)
-        sim_result = model.integrate_and_return_by_index(
-                            this_t,
-                            integrator=integrator,
-                            adopt_final_state=True,
-                            )
-
-        # it might happen that an external model only returns
-        # the final state instead of for each time point
-        if len(sim_result.shape) > 1:
-            result = sim_result[node_compartment_indices,-1]
-        else:
-            result = sim_result[node_compartment_indices]
-
-        # if nothing changed, evaluate the true total event rate
-        # and if it's zero, do not do anything anymore
-        #did_simulation_end = len(ndx) == 0 and model.get_true_total_event_rate() == 0.0
-        #simstate.set_simulation_status(did_simulation_end)
-        #if simstate.simulation_ended:
-        #    return
-        this_cmin, this_cmax = cmin(result), cmax(result)
-
-        # detect significant changes (relative change)
-        rel_change = np.abs(result-simstate.old_node_status)
-        ndx = np.where(rel_change>1e-3)[0]
-        #ndx = np.where(rel_change>0)[0]
-        result = result[ndx]
-
-        # iterate through the nodes that have to be updated
-        #for node, idx in enumerate(node_compartment_indices):
-        if cfg['draw_nodes']:
-            for node, concentration in zip(ndx, result):
-                    disks[node].opacity = _get_opacity(concentration,this_cmin,this_cmax)
-
-        simstate.old_node_status[ndx] = result
-        #simstate.update(result)
-
-
-    # schedule the app clock and run the app
-    pyglet.clock.schedule_interval(update, cfg['update_dt'])
+    pyglet.clock.schedule_interval(update, cfg["update_dt"])
     pyglet.app.run()
