@@ -1,13 +1,14 @@
-# import networkx as nx
-from ast import Return
 import random
 import numpy as np
 from collections import defaultdict
-
-from urllib3 import Retry
 from hypercontagion.exception import HyperContagionError
 from hypercontagion.simulation.functions import majority_vote, threshold
-from hypercontagion.utilities import SamplingDict, EventQueue, _process_trans_SIR_, _process_trans_SIS_
+from hypercontagion.simulation.utilities import (
+    SamplingDict,
+    EventQueue,
+    _process_trans_SIR_,
+    _process_trans_SIS_,
+)
 import xgi
 
 
@@ -55,30 +56,57 @@ def discrete_SIR(
             return 1
 
     if recovery_weight is not None:
+
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
 
     else:
+
         def nodeweight(u):
             return 1
-    
+
     status = defaultdict(lambda: "S")
     for node in initial_infecteds:
         status[node] = "I"
 
         if return_event_data:
-            events.append({"time" : tmin, "source" : None, "target" : node, "old_state" : "S", "new_state" : "I"})
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "S",
+                    "new_state": "I",
+                }
+            )
 
     for node in initial_recovereds:
         status[node] = "R"
 
         if return_event_data:
-            events.append({"time" : tmin, "source" : None, "target" : node, "old_state" : "I", "new_state" : "R"})
-            
-    
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "I",
+                    "new_state": "R",
+                }
+            )
+
     if return_event_data:
-        for node in set(H.nodes).difference(initial_infecteds).difference(initial_recovereds):
-            events.append({"time" : tmin, "source" : None, "target" : node, "old_state" : None, "new_state" : "S"})
+        for node in (
+            set(H.nodes).difference(initial_infecteds).difference(initial_recovereds)
+        ):
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": None,
+                    "new_state": "S",
+                }
+            )
 
     I = [len(initial_infecteds)]
     R = [len(initial_recovereds)]
@@ -102,7 +130,15 @@ def discrete_SIR(
                     I[-1] += -1
 
                     if return_event_data:
-                        events.append({"time" : t, "source" : None, "target" : node, "old_state" : "I", "new_state" : "R"})
+                        events.append(
+                            {
+                                "time": t,
+                                "source": None,
+                                "target": node,
+                                "old_state": "I",
+                                "new_state": "R",
+                            }
+                        )
                 else:
                     new_status[node] = "I"
             elif status[node] == "S":
@@ -110,15 +146,23 @@ def discrete_SIR(
                 for edge_id in H.nodes.memberships(node):
                     edge = H.edges.members(edge_id)
                     if tau[len(edge)] > 0:
-                        if random.random() <= tau[len(edge)] \
-                            * transmission_function(node, status, edge, **args) \
-                            * dt * edgeweight(edge_id):
+                        if random.random() <= tau[len(edge)] * transmission_function(
+                            node, status, edge, **args
+                        ) * dt * edgeweight(edge_id):
                             new_status[node] = "I"
                             S[-1] += -1
                             I[-1] += 1
 
                             if return_event_data:
-                                events.append({"time" : t, "source" : edge_id, "target" : node, "old_state" : "S", "new_state" : "I"})
+                                events.append(
+                                    {
+                                        "time": t,
+                                        "source": edge_id,
+                                        "target": node,
+                                        "old_state": "S",
+                                        "new_state": "I",
+                                    }
+                                )
                             break
                 else:
                     new_status[node] == "S"
@@ -171,10 +215,12 @@ def discrete_SIS(
             return 1
 
     if recovery_weight is not None:
+
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
 
     else:
+
         def nodeweight(u):
             return 1
 
@@ -183,11 +229,27 @@ def discrete_SIS(
         status[node] = "I"
 
         if return_event_data:
-            events.append((tmin, None, node, "S", "I"))
-    
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "S",
+                    "new_state": "I",
+                }
+            )
+
     if return_event_data:
         for node in set(H.nodes).difference(initial_infecteds):
-            events.append((tmin, None, node, "I", "S"))
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "I",
+                    "new_state": "S",
+                }
+            )
 
     I = [len(initial_infecteds)]
     S = [H.number_of_nodes() - I[0]]
@@ -208,7 +270,15 @@ def discrete_SIS(
                     I[-1] += -1
 
                     if return_event_data:
-                        events.append((t, None, node, "S", "I"))
+                        events.append(
+                            {
+                                "time": t,
+                                "source": None,
+                                "target": node,
+                                "old_state": "I",
+                                "new_state": "S",
+                            }
+                        )
                 else:
                     new_status[node] = "I"
             else:
@@ -216,15 +286,23 @@ def discrete_SIS(
                 for edge_id in H.nodes.memberships(node):
                     edge = H.edges.members(edge_id)
                     if tau[len(edge)] > 0:
-                        if random.random() <= tau[len(edge)] \
-                        * transmission_function(node, status, edge, **args) \
-                        * dt * edgeweight(edge_id):
+                        if random.random() <= tau[len(edge)] * transmission_function(
+                            node, status, edge, **args
+                        ) * dt * edgeweight(edge_id):
                             new_status[node] = "I"
                             S[-1] += -1
                             I[-1] += 1
 
                             if return_event_data:
-                                events.append((t, edge_id, node, "I", "S"))
+                                events.append(
+                                    {
+                                        "time": t,
+                                        "source": edge_id,
+                                        "target": node,
+                                        "old_state": "S",
+                                        "new_state": "I",
+                                    }
+                                )
                             break
                 else:
                     new_status[node] == "S"
@@ -259,18 +337,22 @@ def Gillespie_SIR(
         events = list()
 
     if transmission_weight is not None:
+
         def edgeweight(item):
             return item[transmission_weight]
 
     else:
+
         def edgeweight(item):
             return None
 
     if recovery_weight is not None:
+
         def nodeweight(u):
             return H.nodes[u][recovery_weight]
 
     else:
+
         def nodeweight(u):
             return None
 
@@ -296,17 +378,43 @@ def Gillespie_SIR(
         status[node] = "I"
 
         if return_event_data:
-            events.append((tmin, None, node, "S", "I"))
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "S",
+                    "new_state": "I",
+                }
+            )
 
     for node in initial_recovereds:
         status[node] = "R"
 
         if return_event_data:
-            events.append((tmin, None, node, "I", "R"))
-    
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "I",
+                    "new_state": "R",
+                }
+            )
+
     if return_event_data:
-        for node in set(H.nodes).difference(initial_infecteds).difference(initial_recovereds):
-            events.append((tmin, None, node, "None", "S"))
+        for node in (
+            set(H.nodes).difference(initial_infecteds).difference(initial_recovereds)
+        ):
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": None,
+                    "new_state": "S",
+                }
+            )
 
     if recovery_weight is None:
         infecteds = SamplingDict()
@@ -332,7 +440,7 @@ def Gillespie_SIR(
                         IS_links[len(edge)].update(
                             (edge_id, nbr),
                             weight_increment=edgeweight(edge_id),
-                            )  # need to be able to multiply by the contagion?
+                        )  # need to be able to multiply by the contagion?
 
     total_rates = dict()
     total_rates[0] = gamma * infecteds.total_weight()  # I_weight_sum
@@ -340,7 +448,7 @@ def Gillespie_SIR(
         total_rates[size] = tau[size] * IS_links[size].total_weight()  # IS_weight_sum
 
     total_rate = sum(total_rates.values())
-    
+
     if total_rate > 0:
         delay = random.expovariate(total_rate)
     else:
@@ -361,8 +469,16 @@ def Gillespie_SIR(
             status[recovering_node] = "R"
 
             if return_event_data:
-                events.append((t, None, recovering_node, "I", "R"))
-            
+                events.append(
+                    {
+                        "time": t,
+                        "source": None,
+                        "target": recovering_node,
+                        "old_state": "I",
+                        "new_state": "R",
+                    }
+                )
+
             for edge_id in H.nodes.memberships(recovering_node):
                 edge = H.edges.members(edge_id)
                 for nbr in edge:
@@ -379,13 +495,23 @@ def Gillespie_SIR(
             I.append(I[-1] - 1)
             R.append(R[-1] + 1)
         else:  # transmit
-            source, recipient = IS_links[choice].choose_random()  # we don't use remove since that complicates the later removal of edges.
+            source, recipient = IS_links[
+                choice
+            ].choose_random()  # we don't use remove since that complicates the later removal of edges.
             status[recipient] = "I"
 
             infecteds.update(recipient, weight_increment=nodeweight(recipient))
 
             if return_event_data:
-                events.append((t, source, recipient, "S", "I"))
+                events.append(
+                    {
+                        "time": t,
+                        "source": source,
+                        "target": recipient,
+                        "old_state": "S",
+                        "new_state": "I",
+                    }
+                )
 
             for edge_id in H.nodes.memberships(recipient):
                 try:
@@ -399,7 +525,8 @@ def Gillespie_SIR(
                     if status[nbr] == "S":
                         contagion = transmission_function(nbr, status, edge, **args)
                         if contagion != 0:
-                            IS_links[len(edge)].update((edge_id, nbr),
+                            IS_links[len(edge)].update(
+                                (edge_id, nbr),
                                 weight_increment=edgeweight(edge_id),
                             )
 
@@ -485,12 +612,28 @@ def Gillespie_SIS(
         status[node] = "I"
 
         if return_event_data:
-            events.append((tmin, None, node, "S", "I"))
-            
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "S",
+                    "new_state": "I",
+                }
+            )
+
     if return_event_data:
         for node in set(H.nodes).difference(initial_infecteds):
-            events.append((tmin, None, node, "I", "S"))
-    
+            events.append(
+                {
+                    "time": tmin,
+                    "source": None,
+                    "target": node,
+                    "old_state": "I",
+                    "new_state": "S",
+                }
+            )
+
     if recovery_weight is None:
         infecteds = SamplingDict()
     else:
@@ -507,7 +650,9 @@ def Gillespie_SIS(
 
     for node in initial_infecteds:
         infecteds.update(node, weight_increment=nodeweight(node))
-        for edge_id in H.nodes.memberships(node):  # must have this in a separate loop after assigning status of node
+        for edge_id in H.nodes.memberships(
+            node
+        ):  # must have this in a separate loop after assigning status of node
             # handle weighted vs. unweighted?
             edge = H.edges.members(edge_id)
             for nbr in edge:  # there may be self-loops so account for this later
@@ -546,17 +691,25 @@ def Gillespie_SIS(
             status[recovering_node] = "S"
 
             if return_event_data:
-                events.append((t, None, recovering_node, "I", "S"))
-            
+                events.append(
+                    {
+                        "time": t,
+                        "source": None,
+                        "target": recovering_node,
+                        "old_state": "I",
+                        "new_state": "S",
+                    }
+                )
+
             # Find the SI links for the recovered node to get reinfected
             for edge_id in H.nodes.memberships(recovering_node):
                 edge = H.edges.members(edge_id)
                 contagion = transmission_function(recovering_node, status, edge, **args)
                 if contagion != 0:
                     IS_links[len(edge)].update(
-                    (edge_id, recovering_node),
-                    weight_increment=edgeweight(edge_id),
-                )
+                        (edge_id, recovering_node),
+                        weight_increment=edgeweight(edge_id),
+                    )
 
             # reduce the number of infected links because of the healing
             for edge_id in H.nodes.memberships(recovering_node):
@@ -567,9 +720,7 @@ def Gillespie_SIS(
                         contagion = transmission_function(nbr, status, edge, **args)
                         if contagion == 0:
                             try:
-                                IS_links[len(edge)].remove(
-                                    (edge_id, nbr)
-                                )
+                                IS_links[len(edge)].remove((edge_id, nbr))
                             except:
                                 pass
 
@@ -583,7 +734,15 @@ def Gillespie_SIS(
             infecteds.update(recipient, weight_increment=nodeweight(recipient))
 
             if return_event_data:
-                events.append((t, source, recipient, "S", "I"))
+                events.append(
+                    {
+                        "time": t,
+                        "source": source,
+                        "target": recipient,
+                        "old_state": "S",
+                        "new_state": "I",
+                    }
+                )
 
             for edge_id in H.nodes.memberships(recipient):
                 try:
@@ -614,7 +773,7 @@ def Gillespie_SIS(
         else:
             delay = float("Inf")
         t += delay
-    
+
     if return_event_data:
         return events
     else:
@@ -639,18 +798,20 @@ def event_driven_SIR(
 
     events = list()
 
-    #now we define the initial setup.
-    status = defaultdict(lambda: 'S') #node status defaults to 'S'
-    rec_time = defaultdict(lambda: tmin-1) #node recovery time defaults to -1
+    # now we define the initial setup.
+    status = defaultdict(lambda: "S")  # node status defaults to 'S'
+    rec_time = defaultdict(lambda: tmin - 1)  # node recovery time defaults to -1
     if initial_recovereds is not None:
         for node in initial_recovereds:
-            status[node] = 'R'
-            rec_time[node] = tmin-1 #default value for these.  Ensures that the recovered nodes appear with a time
+            status[node] = "R"
+            rec_time[node] = (
+                tmin - 1
+            )  # default value for these.  Ensures that the recovered nodes appear with a time
             events.append((tmin, None, node, "I", "R"))
-    pred_inf_time = defaultdict(lambda: float('Inf')) 
-    #infection time defaults to \infty  --- this could be set to tmax, 
-    #probably with a slight improvement to performance.
-    
+    pred_inf_time = defaultdict(lambda: float("Inf"))
+    # infection time defaults to \infty  --- this could be set to tmax,
+    # probably with a slight improvement to performance.
+
     Q = EventQueue(tmax)
 
     if initial_infecteds is None:
@@ -667,24 +828,43 @@ def event_driven_SIR(
     R = [0]
     S = [H.number_of_nodes()]
     times = [tmin]
-    
+
     for u in initial_infecteds:
         pred_inf_time[u] = tmin
-        Q.add(tmin, _process_trans_SIR_, args=(times, S, I, R, Q,
-        H, status, transmission_function, gamma, tau, None, u,
-        rec_time, pred_inf_time, events))
-    
-    while Q:  #all the work is done in this while loop.
+        Q.add(
+            tmin,
+            _process_trans_SIR_,
+            args=(
+                times,
+                S,
+                I,
+                R,
+                Q,
+                H,
+                status,
+                transmission_function,
+                gamma,
+                tau,
+                None,
+                u,
+                rec_time,
+                pred_inf_time,
+                events,
+            ),
+        )
+
+    while Q:  # all the work is done in this while loop.
         Q.pop_and_run()
 
     if return_event_data:
         return events
     else:
-        times = times[len(initial_infecteds):]
-        S=S[len(initial_infecteds):]
-        I=I[len(initial_infecteds):]
-        R=R[len(initial_infecteds):]
-        return np.array(times), np.array(S), np.array(I), np.array(R) 
+        times = times[len(initial_infecteds) :]
+        S = S[len(initial_infecteds) :]
+        I = I[len(initial_infecteds) :]
+        R = R[len(initial_infecteds) :]
+        return np.array(times), np.array(S), np.array(I), np.array(R)
+
 
 def event_driven_SIS(
     H,
@@ -703,14 +883,14 @@ def event_driven_SIS(
 
     events = list()
 
-    #now we define the initial setup.
-    status = defaultdict(lambda: 'S') #node status defaults to 'S'
-    rec_time = defaultdict(lambda: tmin-1) #node recovery time defaults to -1
-    
-    pred_inf_time = defaultdict(lambda: float('Inf')) 
-    #infection time defaults to \infty  --- this could be set to tmax, 
-    #probably with a slight improvement to performance.
-    
+    # now we define the initial setup.
+    status = defaultdict(lambda: "S")  # node status defaults to 'S'
+    rec_time = defaultdict(lambda: tmin - 1)  # node recovery time defaults to -1
+
+    pred_inf_time = defaultdict(lambda: float("Inf"))
+    # infection time defaults to \infty  --- this could be set to tmax,
+    # probably with a slight improvement to performance.
+
     Q = EventQueue(tmax)
 
     if initial_infecteds is None:
@@ -723,20 +903,37 @@ def event_driven_SIS(
     I = [0]
     S = [H.number_of_nodes()]
     times = [tmin]
-    
+
     for u in initial_infecteds:
         pred_inf_time[u] = tmin
-        Q.add(tmin, _process_trans_SIS_, args=(times, S, I, Q,
-        H, status, transmission_function, gamma, tau, None, u,
-        rec_time, pred_inf_time, events))
-    
-    while Q:  #all the work is done in this while loop.
+        Q.add(
+            tmin,
+            _process_trans_SIS_,
+            args=(
+                times,
+                S,
+                I,
+                Q,
+                H,
+                status,
+                transmission_function,
+                gamma,
+                tau,
+                None,
+                u,
+                rec_time,
+                pred_inf_time,
+                events,
+            ),
+        )
+
+    while Q:  # all the work is done in this while loop.
         Q.pop_and_run()
 
     if return_event_data:
         return events
     else:
-        times = times[len(initial_infecteds):]
-        S=S[len(initial_infecteds):]
-        I=I[len(initial_infecteds):]
+        times = times[len(initial_infecteds) :]
+        S = S[len(initial_infecteds) :]
+        I = I[len(initial_infecteds) :]
         return np.array(times), np.array(S), np.array(I)

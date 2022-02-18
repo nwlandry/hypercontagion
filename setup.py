@@ -19,10 +19,12 @@ url = "https://github.com/nwlandry/hypercontagion"
 
 description = "HyperContagion is a Python library for the simulation of contagion on complex systems with group (higher-order) interactions."
 
+
 def parse_requirements_file(filename):
     with open(filename) as fid:
         requires = [l.strip() for l in fid.readlines() if not l.startswith("#")]
     return requires
+
 
 extras_require = {
     dep: parse_requirements_file("requirements/" + dep + ".txt")

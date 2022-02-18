@@ -33,7 +33,7 @@ def discordance(edge, status):
             * np.sum(np.power(status[edge] - np.mean(status[edge]), 2))
         )
     except ZeroDivisionError:
-        return float("Inf") # handles singleton edges
+        return float("Inf")  # handles singleton edges
 
 
 def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
@@ -43,9 +43,7 @@ def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
             status[edge] = np.mean(status[edge])
             return status
         elif update == "cautious":
-            status[edge] = status[edge] + m * (
-                np.mean(status[edge]) - status[edge]
-            )
+            status[edge] = status[edge] + m * (np.mean(status[edge]) - status[edge])
             return status
     else:
         return status
@@ -69,13 +67,7 @@ def hegselmann_krause(H, status, epsilon=0.1):
 
 
 def simulate_random_group_continuous_state_1D(
-    H,
-    initial_states,
-    function=deffuant_weisbuch,
-    tmin=0,
-    tmax=100,
-    dt=1,
-    **args
+    H, initial_states, function=deffuant_weisbuch, tmin=0, tmax=100, dt=1, **args
 ):
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
@@ -97,13 +89,7 @@ def simulate_random_group_continuous_state_1D(
 
 
 def simulate_random_node_and_group_discrete_state(
-    H,
-    initial_states,
-    function=voter_model,
-    tmin=0,
-    tmax=100,
-    dt=1,
-    **args
+    H, initial_states, function=voter_model, tmin=0, tmax=100, dt=1, **args
 ):
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
@@ -120,22 +106,14 @@ def simulate_random_node_and_group_discrete_state(
         # randomly select neighbors of the node
         edge = H.edges.members(random.choice(list(H.edges)))
 
-        states[:, step] = function(
-            node, edge, states[:, step - 1], **args
-        )
+        states[:, step] = function(node, edge, states[:, step - 1], **args)
         times[step] = time
 
     return times, states
 
 
 def synchronous_update_continuous_state_1D(
-    H,
-    initial_states,
-    function=hegselmann_krause,
-    tmin=0,
-    tmax=100,
-    dt=1,
-    **args
+    H, initial_states, function=hegselmann_krause, tmin=0, tmax=100, dt=1, **args
 ):
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2

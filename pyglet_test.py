@@ -8,25 +8,28 @@ import random
 import pyglet.shapes as shapes
 import xgi
 import random
+
 n = 100
-m =100
+m = 100
 H = xgi.Hypergraph([random.sample(range(n), random.randint(2, 5)) for i in range(m)])
 
 window = pyglet.window.Window()
 
 node_pos = dict()
 for node in H.nodes:
-    node_pos[node] = [480*random.random(), 640*random.random()]
+    node_pos[node] = [480 * random.random(), 640 * random.random()]
 edge_pos = dict()
 for edge in H.edges:
-    edge_pos[edge] = [480*random.random(), 640*random.random()]
+    edge_pos[edge] = [480 * random.random(), 640 * random.random()]
 
 batch, nodes = draw.draw_hypergraph(H, node_pos, edge_pos)
+
 
 @window.event
 def on_draw():
     window.clear()
     batch.draw()
+
 
 # pyglet.clock.schedule(update, dt=0.1)
 

@@ -9,44 +9,46 @@ from collections import defaultdict, Counter
 import heapq
 
 
-
 class EventQueue:
-    r'''
-    This class is used to store and act on a priority queue of events for 
+    r"""
+    This class is used to store and act on a priority queue of events for
     event-driven simulations.  It is based on heapq.
-    Each queue is given a tmax (default is infinity) so that any event at later 
+    Each queue is given a tmax (default is infinity) so that any event at later
     time is ignored.
-    
-    This is a priority queue of 4-tuples of the form 
+
+    This is a priority queue of 4-tuples of the form
                    ``(t, counter, function, function_arguments)``
-    The ``'counter'`` is present just to break ties, which generally only occur when 
-    multiple events are put in place for the initial condition, but could also 
+    The ``'counter'`` is present just to break ties, which generally only occur when
+    multiple events are put in place for the initial condition, but could also
     occur in cases where events tend to happen at discrete times.
-    note that the function is understood to have its first argument be t, and 
+    note that the function is understood to have its first argument be t, and
     the tuple ``function_arguments`` does not include this first t.
-    So function is called as 
+    So function is called as
         ``function(t, *function_arguments)``
-    Previously I used a class of events, but sorting using the __lt__ function 
+    Previously I used a class of events, but sorting using the __lt__ function
     I wrote was significantly slower than simply using tuples.
-    '''
+    """
+
     def __init__(self, tmax=float("Inf")):
         self._Q_ = []
-        self.tmax=tmax
-        self.counter = 0 #tie-breaker for putting things in priority queue
-    def add(self, time, function, args = ()):
-        r'''time is the time of the event.  args are the arguments of the
-        function not including the first argument which must be time'''
-        if time<self.tmax:   
+        self.tmax = tmax
+        self.counter = 0  # tie-breaker for putting things in priority queue
+
+    def add(self, time, function, args=()):
+        r"""time is the time of the event.  args are the arguments of the
+        function not including the first argument which must be time"""
+        if time < self.tmax:
             heapq.heappush(self._Q_, (time, self.counter, function, args))
             self.counter += 1
+
     def pop_and_run(self):
-        r'''Pops the next event off the queue and performs the function'''
+        r"""Pops the next event off the queue and performs the function"""
         t, counter, function, args = heapq.heappop(self._Q_)
         function(t, *args)
-    def __len__(self): 
-        r'''this will allow us to use commands like ``while Q:`` '''
-        return len(self._Q_)
 
+    def __len__(self):
+        r"""this will allow us to use commands like ``while Q:``"""
+        return len(self._Q_)
 
 
 class SamplingDict:
@@ -196,13 +198,12 @@ class SamplingDict:
         self._total_weight = sum(self.weight[item] for item in self.items)
 
 
-
-def choice(arr,p):
+def choice(arr, p):
     """
     Returns a random element from ``arr`` with probability given in array ``p``.
     If ``arr`` is not an iterable, the function returns the index of the chosen element.
     """
-    ndx = np.argmax(np.random.rand()<np.cumsum(p))
+    ndx = np.argmax(np.random.rand() < np.cumsum(p))
     try:
         return arr[ndx]
     except TypeError as e:
@@ -217,7 +218,7 @@ class MockSamplableSet:
     Mimicks the behavior of github.com/gstonge/SamplableSet
     without being as efficient.
 
-    Works similar to Python's set, with ``__getitem__``, 
+    Works similar to Python's set, with ``__getitem__``,
     ``__setitem__``, ``__delitem__``, ``__iter__``,
     ``__len__``, ``__contains__``.
 
@@ -244,7 +245,7 @@ class MockSamplableSet:
         list of corresponding weights
     """
 
-    def __init__(self,min_weight,max_weight,weighted_elements=[],cpp_type='int'):
+    def __init__(self, min_weight, max_weight, weighted_elements=[], cpp_type="int"):
 
         self.min_weight = min_weight
         self.max_weight = max_weight
@@ -252,8 +253,8 @@ class MockSamplableSet:
         if type(weighted_elements) == dict:
             weighted_elements = list(weighted_elements.items())
 
-        self.items = np.array([ e[0] for e in weighted_elements ],dtype=cpp_type)
-        self.weights = np.array([ e[1] for e in weighted_elements ],dtype=float)
+        self.items = np.array([e[0] for e in weighted_elements], dtype=cpp_type)
+        self.weights = np.array([e[1] for e in weighted_elements], dtype=float)
         sort_ndx = np.argsort(self.items)
         self.items = self.items[sort_ndx]
         self.weights = self.weights[sort_ndx]
@@ -278,42 +279,50 @@ class MockSamplableSet:
             The weight of the item
         """
 
-        #ndx = np.random.choice(len(self.items),p=self.weights/self._total_weight)
-        #ndx = np.argwhere(np.random.rand()<np.cumsum(self.weights/self._total_weight))[0][0]
-        ndx = choice(len(self.items),p=self.weights/self._total_weight)
+        # ndx = np.random.choice(len(self.items),p=self.weights/self._total_weight)
+        # ndx = np.argwhere(np.random.rand()<np.cumsum(self.weights/self._total_weight))[0][0]
+        ndx = choice(len(self.items), p=self.weights / self._total_weight)
         return self.items[ndx], self.weights[ndx]
 
-    def __getitem__(self,key):
+    def __getitem__(self, key):
         found_key, ndx = self._find_key(key)
         if not found_key:
-            raise KeyError("`",key,"` is not in this set.")
+            raise KeyError("`", key, "` is not in this set.")
         else:
             return self.weights[ndx]
 
-    def __delitem__(self,key):
+    def __delitem__(self, key):
         found_key, ndx = self._find_key(key)
         if found_key:
             self.items = np.delete(self.items, ndx)
             self.weights = np.delete(self.weights, ndx)
             self._total_weight = self.weights.sum()
 
-    def __setitem__(self,key,value):
+    def __setitem__(self, key, value):
         if value < self.min_weight or value > self.max_weight:
-            raise ValueError('Inserting element-weight pair ' + str(key) +" "+ str(value)+" \n" +\
-                             'has weight value out of bounds of ' + str(self.min_weight) + " " + \
-                             str(self.max_weight))
-        found_key, ndx = self._find_key(key) 
+            raise ValueError(
+                "Inserting element-weight pair "
+                + str(key)
+                + " "
+                + str(value)
+                + " \n"
+                + "has weight value out of bounds of "
+                + str(self.min_weight)
+                + " "
+                + str(self.max_weight)
+            )
+        found_key, ndx = self._find_key(key)
         if not found_key:
             self.items = np.insert(self.items, ndx, key)
             self.weights = np.insert(self.weights, ndx, value)
         else:
             self.weights[ndx] = value
-            
+
         self._total_weight = self.weights.sum()
 
-    def _find_key(self,key):
+    def _find_key(self, key):
         ndx = np.searchsorted(self.items, key)
-        return ( not ((ndx == len(self.items) or self.items[ndx] != key)), ndx )
+        return (not ((ndx == len(self.items) or self.items[ndx] != key)), ndx)
 
     def __iter__(self):
         self._ndx = 0
@@ -321,16 +330,16 @@ class MockSamplableSet:
 
     def __next__(self):
         if self._ndx < len(self.items):
-            i, w = self.items[self._ndx], self.weights[self._ndx]            
+            i, w = self.items[self._ndx], self.weights[self._ndx]
             self._ndx += 1
-            return (i,w)
+            return (i, w)
         else:
             raise StopIteration
 
     def __len__(self):
         return len(self.items)
 
-    def __contains__(self,key):
+    def __contains__(self, key):
         return self._find_key(key)[0]
 
     def total_weight(self):
@@ -342,97 +351,195 @@ class MockSamplableSet:
         pass
 
 
-def _process_trans_SIR_(time, times, S, I, R, Q, H, status, transmission_function, gamma, tau, source, target, 
-                            rec_time, pred_inf_time, events):
-    
-    if status[target] == 'S':  #nothing happens if already infected.
-        status[target] = 'I'
-        times.append(time)
-        events.append((time, source, target, "S", "I"))
-        S.append(S[-1]-1) #one less susceptible
-        I.append(I[-1]+1) #one more infected
-        R.append(R[-1])   #no change to recovered
-                                
-        rec_time[target] = time + rec_delay(gamma)
+def _process_trans_SIR_(
+    t,
+    times,
+    S,
+    I,
+    R,
+    Q,
+    H,
+    status,
+    transmission_function,
+    gamma,
+    tau,
+    source,
+    target,
+    rec_time,
+    pred_inf_time,
+    events,
+):
+
+    if status[target] == "S":  # nothing happens if already infected.
+        status[target] = "I"
+        times.append(t)
+        events.append(
+            {
+                "time": t,
+                "source": source,
+                "target": target,
+                "old_state": "S",
+                "new_state": "I",
+            }
+        )
+        S.append(S[-1] - 1)  # one less susceptible
+        I.append(I[-1] + 1)  # one more infected
+        R.append(R[-1])  # no change to recovered
+
+        rec_time[target] = t + rec_delay(gamma)
         if rec_time[target] < Q.tmax:
-            Q.add(rec_time[target], _process_rec_SIR_, 
-                            args = (times, S, I, R, status, target, events))
+            Q.add(
+                rec_time[target],
+                _process_rec_SIR_,
+                args=(times, S, I, R, status, target, events),
+            )
 
         for edge_id in H.nodes.memberships(target):
             edge = H.edges.members(edge_id)
             for nbr in edge:
                 if status[nbr] == "S":
-                    inf_time = time + trans_delay(tau, edge)
+                    inf_time = t + trans_delay(tau, edge)
 
                     # create statuses at the time requested
-                    temp_status = defaultdict(lambda : "R")
+                    temp_status = defaultdict(lambda: "R")
                     for node in edge:
                         if status[node] == "I" and rec_time[node] > inf_time:
                             temp_status[node] = "I"
                         elif status[node] == "S":
                             temp_status[node] = "S"
-                    
+
                         contagion = transmission_function(nbr, temp_status, edge)
                         if contagion != 0 and inf_time < pred_inf_time[nbr]:
-                            Q.add(inf_time, _process_trans_SIR_, args=(times, S, I, R, Q, H, status, transmission_function, gamma, tau, edge_id, nbr, rec_time, pred_inf_time, events))
+                            Q.add(
+                                inf_time,
+                                _process_trans_SIR_,
+                                args=(
+                                    times,
+                                    S,
+                                    I,
+                                    R,
+                                    Q,
+                                    H,
+                                    status,
+                                    transmission_function,
+                                    gamma,
+                                    tau,
+                                    edge_id,
+                                    nbr,
+                                    rec_time,
+                                    pred_inf_time,
+                                    events,
+                                ),
+                            )
                             pred_inf_time[nbr] = inf_time
-                                        
-        
-def _process_rec_SIR_(time, times, S, I, R, status, node, events):
-    times.append(time)
-    events.append((time, None, node, "I", "R"))
-    S.append(S[-1])   #no change to number susceptible
-    I.append(I[-1] - 1) #one less infected
-    R.append(R[-1] + 1) #one more recovered
-    status[node] = 'R'
 
-def _process_trans_SIS_(time, times, S, I, Q, H, status, transmission_function, gamma, tau, source, target, 
-                            rec_time, pred_inf_time, events):
 
-    if status[target] == 'S':
-        status[target] = 'I'
-        events.append((time, source, target, "S", "I"))
-        I.append(I[-1]+1) #one more infected
-        S.append(S[-1]-1) #one less susceptible
-        times.append(time)
-        
-        rec_time[target] = time + rec_delay(gamma)
-        
+def _process_rec_SIR_(t, times, S, I, R, status, node, events):
+    times.append(t)
+    events.append(
+        {"time": t, "source": None, "target": node, "old_state": "I", "new_state": "R"}
+    )
+    S.append(S[-1])  # no change to number susceptible
+    I.append(I[-1] - 1)  # one less infected
+    R.append(R[-1] + 1)  # one more recovered
+    status[node] = "R"
+
+
+def _process_trans_SIS_(
+    t,
+    times,
+    S,
+    I,
+    Q,
+    H,
+    status,
+    transmission_function,
+    gamma,
+    tau,
+    source,
+    target,
+    rec_time,
+    pred_inf_time,
+    events,
+):
+
+    if status[target] == "S":
+        status[target] = "I"
+        events.append(
+            {
+                "time": t,
+                "source": source,
+                "target": target,
+                "old_state": "S",
+                "new_state": "I",
+            }
+        )
+        I.append(I[-1] + 1)  # one more infected
+        S.append(S[-1] - 1)  # one less susceptible
+        times.append(t)
+
+        rec_time[target] = t + rec_delay(gamma)
+
         if rec_time[target] < Q.tmax:
-            Q.add(rec_time[target], _process_rec_SIS_, 
-                    args = (times, S, I, status, target, events))
-        
+            Q.add(
+                rec_time[target],
+                _process_rec_SIS_,
+                args=(times, S, I, status, target, events),
+            )
+
         for edge_id in H.nodes.memberships(target):
             edge = H.edges.members(edge_id)
             for nbr in edge:
                 if status[nbr] == "S":
-                    inf_time = time + trans_delay(tau, edge)
+                    inf_time = t + trans_delay(tau, edge)
 
                     # create statuses at the time requested
-                    temp_status = defaultdict(lambda : "S")
+                    temp_status = defaultdict(lambda: "S")
                     for node in edge:
                         if status[node] == "I" and rec_time[node] >= inf_time:
                             temp_status[node] = "I"
-                    
+
                         contagion = transmission_function(nbr, temp_status, edge)
                         if contagion != 0 and inf_time < pred_inf_time[nbr]:
-                            Q.add(inf_time, _process_trans_SIS_,
-                            args=(times, S, I, Q, H, status, transmission_function, gamma, tau, edge_id, nbr, rec_time, pred_inf_time, events))
+                            Q.add(
+                                inf_time,
+                                _process_trans_SIS_,
+                                args=(
+                                    times,
+                                    S,
+                                    I,
+                                    Q,
+                                    H,
+                                    status,
+                                    transmission_function,
+                                    gamma,
+                                    tau,
+                                    edge_id,
+                                    nbr,
+                                    rec_time,
+                                    pred_inf_time,
+                                    events,
+                                ),
+                            )
                             pred_inf_time[nbr] = inf_time
 
 
-def _process_rec_SIS_(time, times, S, I, status, node, events):
-    times.append(time)
-    events.append((time, None, node, "I", "S"))
-    S.append(S[-1] + 1)   #one more susceptible
-    I.append(I[-1] - 1) #one less infected
-    status[node] = 'S'
+def _process_rec_SIS_(t, times, S, I, status, node, events):
+    times.append(t)
+    events.append(
+        {"time": t, "source": None, "target": node, "old_state": "I", "new_state": "S"}
+    )
+    S.append(S[-1] + 1)  # one more susceptible
+    I.append(I[-1] - 1)  # one less infected
+    status[node] = "S"
+
 
 def rec_delay(rate):
     try:
         return random.expovariate(rate)
     except:
         return float("Inf")
+
 
 def trans_delay(tau, edge):
     return random.expovariate(tau[len(edge)])
