@@ -169,7 +169,7 @@ html_theme = "sphinx_rtd_theme"
 
 html_show_sphinx = True
 
-htmlhelp_basename ="HyperContagionDoc"
+htmlhelp_basename = "HyperContagionDoc"
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -197,7 +197,9 @@ latex_documents = [
     ),
 ]
 
-man_pages = [(master_doc, "hypercontagion", u"HyperContagion Documentation", [author], 1)]
+man_pages = [
+    (master_doc, "hypercontagion", u"HyperContagion Documentation", [author], 1)
+]
 
 texinfo_documents = [
     (
