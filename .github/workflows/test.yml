@@ -3,10 +3,10 @@ name: test
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
 
@@ -32,4 +32,4 @@ jobs:
     - name: Test HyperContagion
       run: |
         cd ..
-        pytest
+        pytest hypercontagion
