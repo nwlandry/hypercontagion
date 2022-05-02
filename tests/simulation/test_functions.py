@@ -1,4 +1,4 @@
-from hypercontagion.simulation.functions import collective_contagion, individual_contagion, threshold, majority_vote, size_dependent
+from hypercontagion import collective_contagion, individual_contagion, threshold, majority_vote, size_dependent
 
 
 def test_collective_contagion(func_args_1, func_args_2, func_args_3, func_args_4, func_args_5):
