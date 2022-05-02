@@ -1,6 +1,6 @@
 # HyperContagion
 
-HyperContagion is a Python package for the simulation and visualization of complex systems with group (higher-order) interactions.
+HyperContagion is a Python package for the simulation and visualization of contagion processes on complex systems with group (higher-order) interactions.
 
 * [**Source**](../../)
 * [**Bug reports**](../../issues)

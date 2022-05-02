@@ -30,6 +30,47 @@ def discrete_SIR(
     return_event_data=False,
     **args
 ):
+    """Simulate the stochastic SIR model for hypergraphs.
+
+    Parameters
+    ----------
+    H : xgi.Hypergraph
+        The hypergraph on which to simulate the SIR contagion process
+    tau : dict
+        keys are edge sizes and values are transmission rates
+    gamma : float
+        healing rate
+    transmission_function : _type_, optional
+        _description_, by default threshold
+    initial_infecteds : _type_, optional
+        _description_, by default None
+    initial_recovereds : _type_, optional
+        _description_, by default None
+    recovery_weight : _type_, optional
+        _description_, by default None
+    transmission_weight : _type_, optional
+        _description_, by default None
+    rho : _type_, optional
+        _description_, by default None
+    tmin : int, optional
+        _description_, by default 0
+    tmax : _type_, optional
+        _description_, by default float("Inf")
+    dt : float, optional
+        _description_, by default 1.0
+    return_event_data : bool, optional
+        _description_, by default False
+
+    Returns
+    -------
+    tuple of np.arrays
+        t, S, I, R
+
+    Raises
+    ------
+    HyperContagionError
+        _description_
+    """
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -41,7 +82,7 @@ def discrete_SIR(
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes() * rho))
+            initial_number = int(round(H.num_nodes * rho))
         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
@@ -112,7 +153,7 @@ def discrete_SIR(
 
     I = [len(initial_infecteds)]
     R = [len(initial_recovereds)]
-    S = [H.number_of_nodes() - I[0] - R[0]]
+    S = [H.num_nodes - I[0] - R[0]]
     times = [tmin]
     t = tmin
 
@@ -203,7 +244,7 @@ def discrete_SIS(
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes() * rho))
+            initial_number = int(round(H.num_nodes * rho))
         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if transmission_weight is not None:
@@ -254,7 +295,7 @@ def discrete_SIS(
             )
 
     I = [len(initial_infecteds)]
-    S = [H.number_of_nodes() - I[0]]
+    S = [H.num_nodes - I[0]]
     times = [tmin]
     t = tmin
     new_status = status
@@ -362,7 +403,7 @@ def Gillespie_SIR(
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes() * rho))
+            initial_number = int(round(H.num_nodes * rho))
         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
@@ -370,7 +411,7 @@ def Gillespie_SIR(
 
     I = [len(initial_infecteds)]
     R = [len(initial_recovereds)]
-    S = [H.number_of_nodes() - I[0] - R[0]]
+    S = [H.num_nodes - I[0] - R[0]]
     times = [tmin]
 
     t = tmin
@@ -600,11 +641,11 @@ def Gillespie_SIS(
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes() * rho))
+            initial_number = int(round(H.num_nodes * rho))
         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     I = [len(initial_infecteds)]
-    S = [H.number_of_nodes() - I[0]]
+    S = [H.num_nodes - I[0]]
     times = [tmin]
 
     t = tmin
@@ -820,7 +861,7 @@ def event_driven_SIR(
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes() * rho))
+            initial_number = int(round(H.num_nodes * rho))
         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
@@ -828,7 +869,7 @@ def event_driven_SIR(
 
     I = [0]
     R = [0]
-    S = [H.number_of_nodes()]
+    S = [H.num_nodes]
     times = [tmin]
 
     for u in initial_infecteds:
@@ -899,11 +940,11 @@ def event_driven_SIS(
         if rho is None:
             initial_number = 1
         else:
-            initial_number = int(round(H.number_of_nodes() * rho))
+            initial_number = int(round(H.num_nodes * rho))
         initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     I = [0]
-    S = [H.number_of_nodes()]
+    S = [H.num_nodes]
     times = [tmin]
 
     for u in initial_infecteds:

@@ -71,7 +71,7 @@ def simulate_random_group_continuous_state_1D(
 ):
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
-    states = np.empty((H.number_of_nodes(), timesteps))
+    states = np.empty((H.num_nodes, timesteps))
     times = np.empty(timesteps)
     step = 0
     times[step] = time
@@ -93,7 +93,7 @@ def simulate_random_node_and_group_discrete_state(
 ):
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
-    states = np.empty((H.number_of_nodes(), timesteps), dtype=object)
+    states = np.empty((H.num_nodes, timesteps), dtype=object)
     times = np.empty(timesteps)
     step = 0
     times[step] = time
@@ -117,7 +117,7 @@ def synchronous_update_continuous_state_1D(
 ):
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
-    states = np.empty((H.number_of_nodes(), timesteps))
+    states = np.empty((H.num_nodes, timesteps))
     times = np.empty(timesteps)
     step = 0
     times[step] = time
