@@ -3,10 +3,11 @@ Contains a MockSamplableSet class that mimicks the behavior of
 github.com/gstonge/SamplableSet but is less efficient.
 """
 
-import numpy as np
-import random
-from collections import defaultdict, Counter
 import heapq
+import random
+from collections import Counter, defaultdict
+
+import numpy as np
 
 
 class EventQueue:

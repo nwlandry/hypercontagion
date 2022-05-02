@@ -1,5 +1,6 @@
 import random
 
+
 # built-in functions
 def collective_contagion(node, status, edge):
     for i in set(edge).difference({node}):

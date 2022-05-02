@@ -2,20 +2,18 @@
 Visualizations of simulations with pyglet.
 """
 
-from sys import platform
-
 from copy import deepcopy
 from itertools import chain
+from sys import platform
 
 import numpy as np
-
 import pyglet
 from pyglet import shapes
-from pyglet.window import key, mouse, Window
 from pyglet.gl import *
+from pyglet.window import Window, key, mouse
 
-from hypercontagion.visualization.colors import colors
 import hypercontagion.visualization.colors as cols
+from hypercontagion.visualization.colors import colors
 
 _colors = list(colors.values())
 

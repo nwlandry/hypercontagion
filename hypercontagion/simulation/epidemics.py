@@ -1,15 +1,17 @@
 import random
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
+import xgi
+
 from hypercontagion.exception import HyperContagionError
 from hypercontagion.simulation.functions import majority_vote, threshold
 from hypercontagion.simulation.utilities import (
-    SamplingDict,
     EventQueue,
+    SamplingDict,
     _process_trans_SIR_,
     _process_trans_SIS_,
 )
-import xgi
 
 
 def discrete_SIR(

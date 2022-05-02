@@ -1,8 +1,8 @@
-import random
 import heapq
+import random
+from collections import Counter, defaultdict
+
 import numpy as np
-from collections import defaultdict
-from collections import Counter
 
 # built-in functions
 
