@@ -32,4 +32,4 @@ jobs:
     - name: Test HyperContagion
       run: |
         cd ..
-        pytest hypercontagion
+        pytest
