@@ -61,7 +61,7 @@ a citation in your preferred format, and will also integrate well with citation 
 ## License
 Released under the 3-Clause BSD license (see [`LICENSE.md`](LICENSE.md))
 
-Copyright (C) 2022 HyperContagion Developers
+Copyright (C) 2021 HyperContagion Developers
 
 Nicholas Landry <nicholas.landry@colorado.edu>
 

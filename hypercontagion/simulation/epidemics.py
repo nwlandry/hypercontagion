@@ -30,36 +30,38 @@ def discrete_SIR(
     return_event_data=False,
     **args
 ):
-    """Simulate the stochastic SIR model for hypergraphs.
+    """Simulates the discrete SIR model for hypergraphs.
 
     Parameters
     ----------
     H : xgi.Hypergraph
         The hypergraph on which to simulate the SIR contagion process
     tau : dict
-        keys are edge sizes and values are transmission rates
+        Keys are edge sizes and values are transmission rates
     gamma : float
-        healing rate
-    transmission_function : _type_, optional
-        _description_, by default threshold
-    initial_infecteds : _type_, optional
-        _description_, by default None
-    initial_recovereds : _type_, optional
-        _description_, by default None
-    recovery_weight : _type_, optional
-        _description_, by default None
-    transmission_weight : _type_, optional
-        _description_, by default None
-    rho : _type_, optional
-        _description_, by default None
-    tmin : int, optional
-        _description_, by default 0
-    tmax : _type_, optional
-        _description_, by default float("Inf")
-    dt : float, optional
-        _description_, by default 1.0
-    return_event_data : bool, optional
-        _description_, by default False
+        Healing rate
+    transmission_function : lambda function, default: threshold
+        The contagion function that determines whether transmission is possible.
+    initial_infecteds : iterable, default: None
+        Initially infected node IDs.
+    initial_recovereds : iterable, default: None
+        Initially recovered node IDs.
+    recovery_weight : hashable, default: None
+        Hypergraph node attribute that weights the healing rate.
+    transmission_weight : hashable, default: None
+        Hypergraph edge attribute that weights the transmission rate.
+    rho : float, default: None
+        Fraction initially infected. Cannot be specified if
+        `initial_infecteds` is defined.
+    tmin : float, default: 0
+        Time at which the simulation starts.
+    tmax : float, default: float("Inf")
+        Time at which the simulation terminates if there are still
+        infected nodes.
+    dt : float, default: 1.0
+        The time step of the simulation.
+    return_event_data : bool, default: False
+        Whether to track each individual transition event that occurs.
 
     Returns
     -------
@@ -69,7 +71,7 @@ def discrete_SIR(
     Raises
     ------
     HyperContagionError
-        _description_
+        If the user specifies both rho and initial_infecteds.
     """
 
     if rho is not None and initial_infecteds is not None:
@@ -233,6 +235,49 @@ def discrete_SIS(
     return_event_data=False,
     **args
 ):
+    """Simulates the discrete SIS model for hypergraphs.
+
+    Parameters
+    ----------
+    H : xgi.Hypergraph
+        The hypergraph on which to simulate the SIR contagion process
+    tau : dict
+        Keys are edge sizes and values are transmission rates
+    gamma : float
+        Healing rate
+    transmission_function : lambda function, default: threshold
+        The contagion function that determines whether transmission is possible.
+    initial_infecteds : iterable, default: None
+        Initially infected node IDs.
+    initial_recovereds : iterable, default: None
+        Initially recovered node IDs.
+    recovery_weight : hashable, default: None
+        Hypergraph node attribute that weights the healing rate.
+    transmission_weight : hashable, default: None
+        Hypergraph edge attribute that weights the transmission rate.
+    rho : float, default: None
+        Fraction initially infected. Cannot be specified if
+        `initial_infecteds` is defined.
+    tmin : float, default: 0
+        Time at which the simulation starts.
+    tmax : float, default: float("Inf")
+        Time at which the simulation terminates if there are still
+        infected nodes.
+    dt : float, default: 1.0
+        The time step of the simulation.
+    return_event_data : bool, default: False
+        Whether to track each individual transition event that occurs.
+
+    Returns
+    -------
+    tuple of np.arrays
+        t, S, I
+
+    Raises
+    ------
+    HyperContagionError
+        If the user specifies both rho and initial_infecteds.
+    """
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -373,6 +418,48 @@ def Gillespie_SIR(
     return_event_data=False,
     **args
 ):
+    """Simulates the SIR model for hypergraphs with the Gillespie algorithm.
+
+    Parameters
+    ----------
+    H : xgi.Hypergraph
+        The hypergraph on which to simulate the SIR contagion process
+    tau : dict
+        Keys are edge sizes and values are transmission rates
+    gamma : float
+        Healing rate
+    transmission_function : lambda function, default: threshold
+        The contagion function that determines whether transmission is possible.
+    initial_infecteds : iterable, default: None
+        Initially infected node IDs.
+    initial_recovereds : iterable, default: None
+        Initially recovered node IDs.
+    recovery_weight : hashable, default: None
+        Hypergraph node attribute that weights the healing rate.
+    transmission_weight : hashable, default: None
+        Hypergraph edge attribute that weights the transmission rate.
+    rho : float, default: None
+        Fraction initially infected. Cannot be specified if
+        `initial_infecteds` is defined.
+    tmin : float, default: 0
+        Time at which the simulation starts.
+    tmax : float, default: float("Inf")
+        Time at which the simulation terminates if there are still
+        infected nodes.
+    return_event_data : bool, default: False
+        Whether to track each individual transition event that occurs.
+
+    Returns
+    -------
+    tuple of np.arrays
+        t, S, I, R
+
+    Raises
+    ------
+    HyperContagionError
+        If the user specifies both rho and initial_infecteds.
+    """
+
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
@@ -611,6 +698,48 @@ def Gillespie_SIS(
     return_event_data=False,
     **args
 ):
+    """Simulates the SIS model for hypergraphs with the Gillespie algorithm.
+
+    Parameters
+    ----------
+    H : xgi.Hypergraph
+        The hypergraph on which to simulate the SIR contagion process
+    tau : dict
+        Keys are edge sizes and values are transmission rates
+    gamma : float
+        Healing rate
+    transmission_function : lambda function, default: threshold
+        The contagion function that determines whether transmission is possible.
+    initial_infecteds : iterable, default: None
+        Initially infected node IDs.
+    initial_recovereds : iterable, default: None
+        Initially recovered node IDs.
+    recovery_weight : hashable, default: None
+        Hypergraph node attribute that weights the healing rate.
+    transmission_weight : hashable, default: None
+        Hypergraph edge attribute that weights the transmission rate.
+    rho : float, default: None
+        Fraction initially infected. Cannot be specified if
+        `initial_infecteds` is defined.
+    tmin : float, default: 0
+        Time at which the simulation starts.
+    tmax : float, default: float("Inf")
+        Time at which the simulation terminates if there are still
+        infected nodes.
+    return_event_data : bool, default: False
+        Whether to track each individual transition event that occurs.
+
+    Returns
+    -------
+    tuple of np.arrays
+        t, S, I
+
+    Raises
+    ------
+    HyperContagionError
+        If the user specifies both rho and initial_infecteds.
+    """
+
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
@@ -836,6 +965,48 @@ def event_driven_SIR(
     return_event_data=False,
     **args
 ):
+    """Simulates the SIR model for hypergraphs with the event-driven algorithm.
+
+    Parameters
+    ----------
+    H : xgi.Hypergraph
+        The hypergraph on which to simulate the SIR contagion process
+    tau : dict
+        Keys are edge sizes and values are transmission rates
+    gamma : float
+        Healing rate
+    transmission_function : lambda function, default: threshold
+        The contagion function that determines whether transmission is possible.
+    initial_infecteds : iterable, default: None
+        Initially infected node IDs.
+    initial_recovereds : iterable, default: None
+        Initially recovered node IDs.
+    recovery_weight : hashable, default: None
+        Hypergraph node attribute that weights the healing rate.
+    transmission_weight : hashable, default: None
+        Hypergraph edge attribute that weights the transmission rate.
+    rho : float, default: None
+        Fraction initially infected. Cannot be specified if
+        `initial_infecteds` is defined.
+    tmin : float, default: 0
+        Time at which the simulation starts.
+    tmax : float, default: float("Inf")
+        Time at which the simulation terminates if there are still
+        infected nodes.
+    return_event_data : bool, default: False
+        Whether to track each individual transition event that occurs.
+
+    Returns
+    -------
+    tuple of np.arrays
+        t, S, I, R
+
+    Raises
+    ------
+    HyperContagionError
+        If the user specifies both rho and initial_infecteds.
+    """
+
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
@@ -921,6 +1092,47 @@ def event_driven_SIS(
     return_event_data=False,
     **args
 ):
+    """Simulates the SIS model for hypergraphs with the event-driven algorithm.
+
+    Parameters
+    ----------
+    H : xgi.Hypergraph
+        The hypergraph on which to simulate the SIR contagion process
+    tau : dict
+        Keys are edge sizes and values are transmission rates
+    gamma : float
+        Healing rate
+    transmission_function : lambda function, default: threshold
+        The contagion function that determines whether transmission is possible.
+    initial_infecteds : iterable, default: None
+        Initially infected node IDs.
+    initial_recovereds : iterable, default: None
+        Initially recovered node IDs.
+    recovery_weight : hashable, default: None
+        Hypergraph node attribute that weights the healing rate.
+    transmission_weight : hashable, default: None
+        Hypergraph edge attribute that weights the transmission rate.
+    rho : float, default: None
+        Fraction initially infected. Cannot be specified if
+        `initial_infecteds` is defined.
+    tmin : float, default: 0
+        Time at which the simulation starts.
+    tmax : float, default: float("Inf")
+        Time at which the simulation terminates if there are still
+        infected nodes.
+    return_event_data : bool, default: False
+        Whether to track each individual transition event that occurs.
+
+    Returns
+    -------
+    tuple of np.arrays
+        t, S, I
+
+    Raises
+    ------
+    HyperContagionError
+        If the user specifies both rho and initial_infecteds.
+    """
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
