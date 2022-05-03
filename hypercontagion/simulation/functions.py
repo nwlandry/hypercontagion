@@ -3,6 +3,22 @@ import random
 
 # built-in functions
 def collective_contagion(node, status, edge):
+    """Collective contagion function.
+
+    Parameters
+    ----------
+    node : hashable
+        node ID
+    status : dict
+        keys are node IDs and values are the status.
+    edge : iterable
+        hyperedge
+
+    Returns
+    -------
+    0 or 1
+        0 if no transmission can occur, 1 if it can.
+    """
     for i in set(edge).difference({node}):
         if status[i] != "I":
             return 0
@@ -10,6 +26,22 @@ def collective_contagion(node, status, edge):
 
 
 def individual_contagion(node, status, edge):
+    """Individual contagion function.
+
+    Parameters
+    ----------
+    node : hashable
+        node ID
+    status : dict
+        keys are node IDs and values are the status.
+    edge : iterable
+        hyperedge
+
+    Returns
+    -------
+    0 or 1
+        0 if no transmission can occur, 1 if it can.
+    """
     for i in set(edge).difference({node}):
         if status[i] == "I":
             return 1
