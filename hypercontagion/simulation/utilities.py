@@ -81,9 +81,11 @@ class SamplingDict:
             self.max_weight_count = 0
 
     def __len__(self):
+        """Number of items."""
         return len(self.items)
 
     def __contains__(self, item):
+        """Whether an item exists in the dictionary"""
         return item in self.item_to_position
 
     def _update_max_weight(self):
@@ -145,6 +147,13 @@ class SamplingDict:
         self.item_to_position[item] = len(self.items) - 1
 
     def remove(self, choice):
+        """Remove item and update weights
+
+        Parameters
+        ----------
+        choice : hashable
+            item ID
+        """
         position = self.item_to_position.pop(
             choice
         )  # why don't we pop off the last item and put it in the choice index?
@@ -166,36 +175,33 @@ class SamplingDict:
                     self._update_max_weight()
 
     def choose_random(self):
-        # r'''chooses a random node.  If there is a weight, it will use rejection
-        # sampling to choose a random node until it succeeds'''
+        """chooses a random node.  If there is a weight, it will use rejection
+        sampling to choose a random node until it succeeds"""
         if self.weighted:
             while True:
                 choice = random.choice(self.items)
                 if random.random() < self.weight[choice] / self.max_weight:
                     break
-            # r = random.random()*self.total_weight
-            # for item in self.items:
-            #     r-= self.weight[item]
-            #     if r<0:
-            #         break
             return choice
 
         else:
             return random.choice(self.items)
 
     def random_removal(self):
-        r"""uses other class methods to choose and then remove a random node"""
+        """uses other class methods to choose and then remove a random node"""
         choice = self.choose_random()
         self.remove(choice)
         return choice
 
     def total_weight(self):
+        """Get the sum of all the weights in the dict."""
         if self.weighted:
             return self._total_weight
         else:
             return len(self)
 
     def update_total_weight(self):
+        """Update the sum of weights."""
         self._total_weight = sum(self.weight[item] for item in self.items)
 
 

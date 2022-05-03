@@ -3,6 +3,8 @@ include setup.py
 include README.md
 include LICENSE.md
 include CITATION.cff
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
 
 recursive-include data *.txt
 recursive-include tutorials *.ipynb
