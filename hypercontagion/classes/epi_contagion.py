@@ -1,9 +1,5 @@
-from collections import defaultdict
-
 import networkx as nx
-from sklearn import neighbors
 
-from hypercontagion import SamplingDict
 from hypercontagion.exception import HyperContagionError
 
 

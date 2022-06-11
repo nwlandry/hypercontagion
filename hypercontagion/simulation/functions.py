@@ -10,13 +10,13 @@ def collective_contagion(node, status, edge):
     node : hashable
         node ID
     status : dict
-        keys are node IDs and values are the status.
+        keys are node IDs and values are their statuses.
     edge : iterable
         hyperedge
 
     Returns
     -------
-    0 or 1
+    int
         0 if no transmission can occur, 1 if it can.
     """
     for i in set(edge).difference({node}):
@@ -33,13 +33,13 @@ def individual_contagion(node, status, edge):
     node : hashable
         node ID
     status : dict
-        keys are node IDs and values are the status.
+        keys are node IDs and values are their statuses.
     edge : iterable
         hyperedge
 
     Returns
     -------
-    0 or 1
+    int
         0 if no transmission can occur, 1 if it can.
     """
     for i in set(edge).difference({node}):
@@ -49,6 +49,28 @@ def individual_contagion(node, status, edge):
 
 
 def threshold(node, status, edge, threshold=0.5):
+    """Threshold contagion process.
+
+    Contagion may spread if greater than a specified fraction
+    of hyperedge neighbors are infected.
+
+    Parameters
+    ----------
+    node : hashable
+        node ID
+    status : dict
+        keys are node IDs and values are their statuses.
+    edge : iterable of hashables
+        nodes in the hyperedge
+    threshold : float, default: 0.5
+        the critical fraction of hyperedge neighbors above
+        which contagion spreads.
+
+    Returns
+    -------
+    int
+        0 if no transmission can occur, 1 if it can.
+    """
     neighbors = set(edge).difference({node})
     try:
         c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)
@@ -62,6 +84,26 @@ def threshold(node, status, edge, threshold=0.5):
 
 
 def majority_vote(node, status, edge):
+    """Majority vote contagion process.
+
+    Contagion may spread if the majority of a node's
+    hyperedge neighbors are infected. If it's a tie,
+    the result is random.
+
+    Parameters
+    ----------
+    node : hashable
+        node ID
+    status : dict
+        keys are node IDs and values are their statuses.
+    edge : iterable of hashables
+        nodes in the hyperedge
+
+    Returns
+    -------
+    int
+        0 if no transmission can occur, 1 if it can.
+    """
     neighbors = set(edge).difference({node})
     try:
         c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)

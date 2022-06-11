@@ -1,6 +1,4 @@
-import heapq
 import random
-from collections import Counter, defaultdict
 
 import numpy as np
 

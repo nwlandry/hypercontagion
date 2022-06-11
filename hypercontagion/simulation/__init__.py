@@ -1,5 +1,4 @@
-from hypercontagion.simulation import epidemics, functions, opinions, utilities
-
+from . import epidemics, functions, opinions, utilities
 from .epidemics import *
 from .functions import *
 from .opinions import *
