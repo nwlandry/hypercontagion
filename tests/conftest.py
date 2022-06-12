@@ -41,3 +41,7 @@ def func_args_6():
         "status": {1: "S", 2: "S", 3: "S", 4: "R", 5: "R"},
         "edge": [1, 2, 3, 4, 5],
     }
+
+@pytest.fixture
+def edgelist1():
+    return [[1, 2, 3], [4], [5, 6], [6, 7, 8]]
