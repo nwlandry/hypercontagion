@@ -582,6 +582,7 @@ def Gillespie_SIR(
     if total_rate > 0:
         delay = random.expovariate(total_rate)
     else:
+        print("Total rate is zero and no events will happen!")
         delay = float("Inf")
 
     t += delay
@@ -614,11 +615,11 @@ def Gillespie_SIR(
                 for nbr in edge:
                     if status[nbr] == "S" and (edge_id, nbr) in IS_links[len(edge)]:
                         contagion = transmission_function(nbr, status, edge, **args)
-                    if contagion == 0:
-                        try:
-                            IS_links[len(edge)].remove((edge_id, nbr))
-                        except:
-                            pass
+                        if contagion == 0:
+                            try:
+                                IS_links[len(edge)].remove((edge_id, nbr))
+                            except:
+                                pass
 
             times.append(t)
             S.append(S[-1])
@@ -829,7 +830,7 @@ def Gillespie_SIS(
             edge = H.edges.members(edge_id)
             for nbr in edge:  # there may be self-loops so account for this later
                 if status[nbr] == "S":
-                    contagion = transmission_function(node, status, edge, **args)
+                    contagion = transmission_function(nbr, status, edge, **args)
                     if contagion != 0:
                         IS_links[len(edge)].update(
                             (edge_id, nbr),
@@ -845,6 +846,7 @@ def Gillespie_SIS(
     if total_rate > 0:
         delay = random.expovariate(total_rate)
     else:
+        print("Total rate is zero and no events will happen!")
         delay = float("Inf")
 
     t += delay
