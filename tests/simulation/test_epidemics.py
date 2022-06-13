@@ -1,7 +1,7 @@
-import hypercontagion as hc
 import numpy as np
 import xgi
 
+import hypercontagion as hc
 from hypercontagion.simulation.functions import threshold
 
 
@@ -34,6 +34,7 @@ def test_discrete_SIR(edgelist1):
     assert S[-1] == 4
     assert I[-1] == 4
     assert R[-1] == 0
+
 
 def test_discrete_SIS(edgelist1):
     H = xgi.Hypergraph(edgelist1)
@@ -117,7 +118,6 @@ def test_Gillespie_SIS(edgelist1):
     )
 
     assert I[-1] == 2
-
 
     gamma = 100
     tau = {1: 0, 2: 0, 3: 0}

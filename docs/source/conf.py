@@ -191,21 +191,21 @@ latex_documents = [
     (
         master_doc,
         "hypercontagion.tex",
-        u"HypercContagion Documentation",
-        u"Nicholas W. Landry and Joel C. Miller",
+        "HypercContagion Documentation",
+        "Nicholas W. Landry and Joel C. Miller",
         "manual",
     ),
 ]
 
 man_pages = [
-    (master_doc, "hypercontagion", u"HyperContagion Documentation", [author], 1)
+    (master_doc, "hypercontagion", "HyperContagion Documentation", [author], 1)
 ]
 
 texinfo_documents = [
     (
         master_doc,
         "HyperContagion",
-        u"HyperContagion Documentation",
+        "HyperContagion Documentation",
         author,
         "HyperContagion",
         "A library to simulate higher-order contagion",

@@ -76,7 +76,7 @@ def threshold(node, status, edge, threshold=0.5):
         c = sum([status[i] == "I" for i in neighbors]) / len(neighbors)
     except:
         c = 0
-        
+
     if c < threshold:
         return 0
     elif c >= threshold:
