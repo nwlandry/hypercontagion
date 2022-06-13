@@ -4,7 +4,7 @@
    :caption: Home
    :hidden:
 
-   about
+   about <about.rst>
 
 .. toctree::
    :maxdepth: 2

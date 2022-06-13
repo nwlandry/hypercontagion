@@ -28,6 +28,20 @@ def voter_model(node, edge, status, p_adoption=1):
 
 # continuous output
 def discordance(edge, status):
+    """Computes the discordance
+
+    Parameters
+    ----------
+    edge : _type_
+        _description_
+    status : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     try:
         return (
             1
@@ -39,6 +53,26 @@ def discordance(edge, status):
 
 
 def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
+    """_summary_
+
+    Parameters
+    ----------
+    edge : _type_
+        _description_
+    status : _type_
+        _description_
+    epsilon : float, optional
+        _description_, by default 0.5
+    update : str, optional
+        _description_, by default "average"
+    m : float, optional
+        _description_, by default 0.1
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     status = status.copy()
     if discordance(edge, status) < epsilon:
         if update == "average":
@@ -52,6 +86,22 @@ def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
 
 
 def hegselmann_krause(H, status, epsilon=0.1):
+    """_summary_
+
+    Parameters
+    ----------
+    H : _type_
+        _description_
+    status : _type_
+        _description_
+    epsilon : float, optional
+        _description_, by default 0.1
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     new_status = status.copy()
     for node in H.nodes:
         new_status[node] = 0
@@ -71,6 +121,28 @@ def hegselmann_krause(H, status, epsilon=0.1):
 def simulate_random_group_continuous_state_1D(
     H, initial_states, function=deffuant_weisbuch, tmin=0, tmax=100, dt=1, **args
 ):
+    """_summary_
+
+    Parameters
+    ----------
+    H : _type_
+        _description_
+    initial_states : _type_
+        _description_
+    function : _type_, optional
+        _description_, by default deffuant_weisbuch
+    tmin : int, optional
+        _description_, by default 0
+    tmax : int, optional
+        _description_, by default 100
+    dt : int, optional
+        _description_, by default 1
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
     states = np.empty((H.num_nodes, timesteps))
@@ -117,6 +189,28 @@ def simulate_random_node_and_group_discrete_state(
 def synchronous_update_continuous_state_1D(
     H, initial_states, function=hegselmann_krause, tmin=0, tmax=100, dt=1, **args
 ):
+    """_summary_
+
+    Parameters
+    ----------
+    H : _type_
+        _description_
+    initial_states : _type_
+        _description_
+    function : _type_, optional
+        _description_, by default hegselmann_krause
+    tmin : int, optional
+        _description_, by default 0
+    tmax : int, optional
+        _description_, by default 100
+    dt : int, optional
+        _description_, by default 1
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
     states = np.empty((H.num_nodes, timesteps))
