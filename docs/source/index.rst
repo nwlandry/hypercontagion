@@ -18,7 +18,7 @@
    :caption: API Reference
    :hidden:
 
-   Simulation <api/simulation.rst>
+   Simulation <api/sim.rst>
 
 About
 =====

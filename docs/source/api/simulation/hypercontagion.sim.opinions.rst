@@ -1,9 +1,9 @@
-hypercontagion.simulation.opinions
+hypercontagion.sim.opinions
 ======================
 
-.. currentmodule:: hypercontagion.simulation.opinions
+.. currentmodule:: hypercontagion.sim.opinions
 
-.. automodule:: hypercontagion.simulation.opinions
+.. automodule:: hypercontagion.sim.opinions
    
    .. rubric:: Functions
    

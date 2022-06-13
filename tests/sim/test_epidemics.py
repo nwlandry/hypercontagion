@@ -2,7 +2,7 @@ import numpy as np
 import xgi
 
 import hypercontagion as hc
-from hypercontagion.simulation.functions import threshold
+from hypercontagion.sim.functions import threshold
 
 
 def test_discrete_SIR(edgelist1):

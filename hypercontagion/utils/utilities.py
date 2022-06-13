@@ -8,6 +8,16 @@ from collections import Counter, defaultdict
 
 import numpy as np
 
+__all__ = [
+    "EventQueue",
+    "MockSamplableSet",
+    "SamplingDict",
+    "_process_trans_SIR_",
+    "_process_rec_SIR_",
+    "_process_trans_SIS_",
+    "_process_rec_SIS_",
+]
+
 
 class EventQueue:
     r"""

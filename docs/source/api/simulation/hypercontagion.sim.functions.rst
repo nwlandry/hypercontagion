@@ -1,9 +1,9 @@
-hypercontagion.simulation.functions
+hypercontagion.sim.functions
 =========================
 
-.. currentmodule:: hypercontagion.simulation.functions
+.. currentmodule:: hypercontagion.sim.functions
 
-.. automodule:: hypercontagion.simulation.functions
+.. automodule:: hypercontagion.sim.functions
    
    .. rubric:: Functions
    

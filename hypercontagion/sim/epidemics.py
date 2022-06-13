@@ -9,15 +9,12 @@ import numpy as np
 import xgi
 
 from ..exception import HyperContagionError
+from ..utils import EventQueue, SamplingDict
+from ..utils import _process_trans_SIR_, _process_trans_SIS_, py_random_state
 from .functions import majority_vote, threshold
-from ..utilities import (
-    EventQueue,
-    SamplingDict,
-    _process_trans_SIR_,
-    _process_trans_SIS_,
-)
 
 
+# @py_random_state("seed")
 def discrete_SIR(
     H,
     tau,
@@ -224,6 +221,7 @@ def discrete_SIR(
         return np.array(times), np.array(S), np.array(I), np.array(R)
 
 
+@py_random_state
 def discrete_SIS(
     H,
     tau,

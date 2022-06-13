@@ -1,9 +1,9 @@
-﻿hypercontagion.simulation.epidemics
+﻿hypercontagion.sim.epidemics
 ======================
 
-.. currentmodule:: hypercontagion.simulation.epidemics
+.. currentmodule:: hypercontagion.sim.epidemics
 
-.. automodule:: hypercontagion.simulation.epidemics
+.. automodule:: hypercontagion.sim.epidemics
    
    .. rubric:: Functions
    
