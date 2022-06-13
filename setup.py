@@ -29,7 +29,7 @@ def parse_requirements_file(filename):
 
 extras_require = {
     dep: parse_requirements_file("requirements/" + dep + ".txt")
-    for dep in ["developer", "documentation", "release", "test", "demos"]
+    for dep in ["developer", "documentation", "release", "test", "tutorial"]
 }
 
 install_requires = parse_requirements_file("requirements/default.txt")

@@ -26,10 +26,32 @@ jobs:
     - name: Install packages
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        python -m pip install -r requirements/default.txt -r requirements/test.txt
+        python -m pip install -r requirements/default.txt -r requirements/test.txt -r requirements/tutorial.txt
         python -m pip install .
         python -m pip list
+
+    - name: Prepare tutorial notebooks
+      run: |
+        # go into tutorial location
+        cd tutorials/
+        # convert each notebook into a python file
+        jupyter nbconvert --to script Tutorial*ipynb
+        # rename the files so they are found by pytest: add 'test' at the beggining
+        rename 's/(.*)\.py/test $1.py/' *
+        # rename the files so they are found by pytest: change spaces to underscores
+        rename 's/ /_/g' test*
+        # modify each file by adding one level of indentation to each line
+        sed -i 's/^/    /' test*.py
+        # modify each file by adding 'def test_func():' at the top
+        sed -i '1s;^;def test_func():\n;' test*.py
+
+    - name: Test tutorial notebooks
+      run: |
+        # run pytest ONLY on the tutorials
+        cd tutorials/
+        pytest --color=yes
+
     - name: Test HyperContagion
       run: |
         cd ..
-        pytest hypercontagion
+        pytest hypercontagion --color=yes
