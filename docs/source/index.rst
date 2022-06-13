@@ -19,6 +19,7 @@
    :hidden:
 
    Simulation <api/sim.rst>
+   utilities <api/utilities.rst>
 
 About
 =====

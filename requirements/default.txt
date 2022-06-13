@@ -1,2 +1,3 @@
 xgi>=0.3
 numpy>=1.19
+networkx>=2.0
