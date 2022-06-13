@@ -1,3 +1,7 @@
+"""
+Opinion formation models on hypergraphs.
+"""
+
 import random
 
 import numpy as np

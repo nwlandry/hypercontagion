@@ -1,6 +1,5 @@
 """
-Contains a MockSamplableSet class that mimicks the behavior of 
-github.com/gstonge/SamplableSet but is less efficient.
+Contains useful classes and functions for use in the hypercontagion library.
 """
 
 import heapq

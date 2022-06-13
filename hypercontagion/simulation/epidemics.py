@@ -1,12 +1,16 @@
+"""
+Classic epidemiological models extended to higher-order contagion.
+"""
+
 import random
 from collections import defaultdict
 
 import numpy as np
 import xgi
 
-from hypercontagion.exception import HyperContagionError
-from hypercontagion.simulation.functions import majority_vote, threshold
-from hypercontagion.simulation.utilities import (
+from ..exception import HyperContagionError
+from .functions import majority_vote, threshold
+from ..utilities import (
     EventQueue,
     SamplingDict,
     _process_trans_SIR_,

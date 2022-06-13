@@ -1,3 +1,7 @@
+"""
+Provides predefined contagion functions for use in the hypercontagion library.
+"""
+
 import random
 
 

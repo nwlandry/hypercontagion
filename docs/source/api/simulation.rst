@@ -5,7 +5,7 @@ simulation package
 .. rubric:: Modules
 
 .. autosummary::
-   :toctree: classes
+   :toctree: module
 
    ~hypercontagion.simulation.epidemics
    ~hypercontagion.simulation.opinions
