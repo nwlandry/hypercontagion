@@ -1,5 +1,5 @@
 hypercontagion.sim.functions
-=========================
+============================
 
 .. currentmodule:: hypercontagion.sim.functions
 

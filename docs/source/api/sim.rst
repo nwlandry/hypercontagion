@@ -1,11 +1,11 @@
-##################
+###########
 sim package
-##################
+###########
 
 .. rubric:: Modules
 
 .. autosummary::
-   :toctree: module
+   :toctree: sim
 
    ~hypercontagion.sim.epidemics
    ~hypercontagion.sim.opinions

@@ -1,5 +1,5 @@
 ﻿hypercontagion.sim.epidemics
-======================
+============================
 
 .. currentmodule:: hypercontagion.sim.epidemics
 

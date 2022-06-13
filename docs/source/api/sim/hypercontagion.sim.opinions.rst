@@ -1,5 +1,5 @@
 hypercontagion.sim.opinions
-======================
+===========================
 
 .. currentmodule:: hypercontagion.sim.opinions
 
