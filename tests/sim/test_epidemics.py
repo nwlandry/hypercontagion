@@ -14,7 +14,7 @@ def test_discrete_SIR(edgelist1):
     gamma = 1
     tau = {1: 10, 2: 10, 3: 10}
     t, S, I, R = hc.discrete_SIR(
-        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, dt=dt
+        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, dt=dt, seed=0
     )
 
     assert np.all(S + I + R == H.num_nodes)
@@ -27,7 +27,15 @@ def test_discrete_SIR(edgelist1):
 
     gamma = 0
     t, S, I, R = hc.discrete_SIR(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, dt=dt, threshold=0.5
+        H,
+        tau,
+        gamma,
+        initial_infecteds=[6],
+        tmin=tmin,
+        tmax=tmax,
+        dt=dt,
+        threshold=0.5,
+        seed=0,
     )
 
     assert np.all(S + I + R == H.num_nodes)
@@ -45,7 +53,7 @@ def test_discrete_SIS(edgelist1):
     gamma = 1
     tau = {1: 10, 2: 10, 3: 10}
     t, S, I = hc.discrete_SIS(
-        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, dt=dt
+        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, dt=dt, seed=0
     )
 
     assert np.all(S + I == H.num_nodes)
@@ -57,7 +65,15 @@ def test_discrete_SIS(edgelist1):
 
     gamma = 0
     t, S, I = hc.discrete_SIS(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, dt=dt, threshold=0.5
+        H,
+        tau,
+        gamma,
+        initial_infecteds=[6],
+        tmin=tmin,
+        tmax=tmax,
+        dt=dt,
+        threshold=0.5,
+        seed=0,
     )
 
     assert np.all(S + I == H.num_nodes)
@@ -74,7 +90,7 @@ def test_Gillespie_SIR(edgelist1):
     gamma = 10
     tau = {1: 10, 2: 10, 3: 10}
     t, S, I, R = hc.Gillespie_SIR(
-        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert np.all(S + I + R == H.num_nodes)
@@ -86,7 +102,14 @@ def test_Gillespie_SIR(edgelist1):
     gamma = 0
 
     t, S, I, R = hc.Gillespie_SIR(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, threshold=0.5
+        H,
+        tau,
+        gamma,
+        initial_infecteds=[6],
+        tmin=tmin,
+        tmax=tmax,
+        threshold=0.5,
+        seed=0,
     )
 
     assert np.all(S + I + R == H.num_nodes)
@@ -105,7 +128,14 @@ def test_Gillespie_SIS(edgelist1):
     gamma = 0
     tau = {1: 10, 2: 10, 3: 10}
     t, S, I = hc.Gillespie_SIS(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, threshold=0.5
+        H,
+        tau,
+        gamma,
+        initial_infecteds=[6],
+        tmin=tmin,
+        tmax=tmax,
+        threshold=0.5,
+        seed=0,
     )
 
     assert np.all(S + I == H.num_nodes)
@@ -114,7 +144,14 @@ def test_Gillespie_SIS(edgelist1):
     assert I[-1] == 4
 
     t, S, I = hc.Gillespie_SIS(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, threshold=0.51
+        H,
+        tau,
+        gamma,
+        initial_infecteds=[6],
+        tmin=tmin,
+        tmax=tmax,
+        threshold=0.51,
+        seed=0,
     )
 
     assert I[-1] == 2
@@ -122,7 +159,7 @@ def test_Gillespie_SIS(edgelist1):
     gamma = 100
     tau = {1: 0, 2: 0, 3: 0}
     t, S, I = hc.Gillespie_SIS(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert np.all(S + I == H.num_nodes)
@@ -140,7 +177,7 @@ def test_event_driven_SIR(edgelist1):
     gamma = 10
     tau = {1: 10, 2: 10, 3: 10}
     t, S, I, R = hc.event_driven_SIR(
-        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert np.all(S + I + R == H.num_nodes)
@@ -151,7 +188,7 @@ def test_event_driven_SIR(edgelist1):
 
     gamma = 0
     t, S, I, R = hc.event_driven_SIR(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert np.all(S + I + R == H.num_nodes)
@@ -163,7 +200,7 @@ def test_event_driven_SIR(edgelist1):
     gamma = 100
     tau = {1: 0, 2: 0, 3: 0}
     t, S, I, R = hc.event_driven_SIR(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert S[-1] == H.num_nodes - 1
@@ -179,7 +216,7 @@ def test_event_driven_SIS(edgelist1):
     gamma = 10
     tau = {1: 0, 2: 0, 3: 0}
     t, S, I = hc.event_driven_SIS(
-        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert np.all(S + I == H.num_nodes)
@@ -190,7 +227,7 @@ def test_event_driven_SIS(edgelist1):
     gamma = 0
     tau = {1: 10, 2: 10, 3: 10}
     t, S, I = hc.event_driven_SIS(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
+        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, seed=0
     )
 
     assert np.all(S + I == H.num_nodes)
