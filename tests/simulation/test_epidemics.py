@@ -139,7 +139,7 @@ def test_event_driven_SIR(edgelist1):
 
     gamma = 10
     tau = {1: 10, 2: 10, 3: 10}
-    t, S, I, R = hc.Gillespie_SIR(
+    t, S, I, R = hc.event_driven_SIR(
         H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax
     )
 
@@ -150,7 +150,7 @@ def test_event_driven_SIR(edgelist1):
     assert R[-1] == 1
 
     gamma = 0
-    t, S, I, R = hc.Gillespie_SIR(
+    t, S, I, R = hc.event_driven_SIR(
         H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
     )
 
@@ -162,7 +162,7 @@ def test_event_driven_SIR(edgelist1):
 
     gamma = 100
     tau = {1: 0, 2: 0, 3: 0}
-    t, S, I, R = hc.Gillespie_SIR(
+    t, S, I, R = hc.event_driven_SIR(
         H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
     )
 
@@ -170,5 +170,30 @@ def test_event_driven_SIR(edgelist1):
     assert R[-1] == 1
 
 
-def test_event_driven_SIS():
-    assert 0 == 0
+def test_event_driven_SIS(edgelist1):
+    H = xgi.Hypergraph(edgelist1)
+
+    tmin = 10
+    tmax = 20
+
+    gamma = 10
+    tau = {1: 0, 2: 0, 3: 0}
+    t, S, I = hc.event_driven_SIS(
+        H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax
+    )
+
+    assert np.all(S + I == H.num_nodes)
+    assert np.min(t) == tmin
+    assert np.max(t) < tmax
+    assert I[-1] == 0
+
+    gamma = 0
+    tau = {1: 10, 2: 10, 3: 10}
+    t, S, I = hc.event_driven_SIS(
+        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax
+    )
+
+    assert np.all(S + I == H.num_nodes)
+    assert np.min(t) == tmin
+    assert np.max(t) < tmax
+    assert I[-1] == 4

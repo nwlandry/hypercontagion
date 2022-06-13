@@ -549,4 +549,7 @@ def rec_delay(rate):
 
 
 def trans_delay(tau, edge):
-    return random.expovariate(tau[len(edge)])
+    try:
+        return random.expovariate(tau[len(edge)])
+    except ZeroDivisionError:
+        return np.inf
