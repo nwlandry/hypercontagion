@@ -4,7 +4,7 @@
    :caption: Home
    :hidden:
 
-   about <about.rst>
+   About <about.rst>
 
 .. toctree::
    :maxdepth: 2
@@ -19,7 +19,7 @@
    :hidden:
 
    Simulation <api/sim.rst>
-   utilities <api/utilities.rst>
+   Utilities <api/utilities.rst>
 
 About
 =====
