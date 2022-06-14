@@ -45,24 +45,39 @@ class EventQueue:
         self.counter = 0  # tie-breaker for putting things in priority queue
 
     def add(self, time, function, args=()):
-        r"""time is the time of the event.  args are the arguments of the
-        function not including the first argument which must be time"""
+        """ Add event to the queue.
+
+        Parameters
+        ----------
+        time : float
+            time of the event
+        function : function name
+            name of the function to run when the event is popped.
+        args : keyword args
+            args of the function excluding time.
+        """
         if time < self.tmax:
             heapq.heappush(self._Q_, (time, self.counter, function, args))
             self.counter += 1
 
     def pop_and_run(self):
-        r"""Pops the next event off the queue and performs the function"""
+        """Pops the next event off the queue and performs the function"""
         t, counter, function, args = heapq.heappop(self._Q_)
         function(t, *args)
 
     def __len__(self):
-        r"""this will allow us to use commands like ``while Q:``"""
+        """this allows us to use commands like ``while Q:``
+        
+        Returns
+        -------
+        int
+            number of events currently in the queue
+        """
         return len(self._Q_)
 
 
 class SamplingDict:
-    r"""
+    """
     The Gillespie algorithm will involve a step that samples a random element
     from a set based on its weight.  This is awkward in Python.
 
@@ -73,7 +88,7 @@ class SamplingDict:
     found at
     http://stackoverflow.com/a/15993515/2966723
 
-    This will allow me to select a random element uniformly, and then use
+    This will allow selecting a random element uniformly, and then use
     rejection sampling to make sure it's been selected with the appropriate
     weight.
     """
@@ -90,7 +105,13 @@ class SamplingDict:
             self.max_weight_count = 0
 
     def __len__(self):
-        """Number of items."""
+        """Number of items in the dict
+        
+        Returns
+        -------
+        int
+            number of items in dict
+        """
         return len(self.items)
 
     def __contains__(self, item):
@@ -98,6 +119,7 @@ class SamplingDict:
         return item in self.item_to_position
 
     def _update_max_weight(self):
+        """Internal function to help with the rejection sampling"""
         C = Counter(
             self.weight.values()
         )  # may be a faster way to do this, we only need to count the max.
@@ -105,29 +127,51 @@ class SamplingDict:
         self.max_weight_count = C[self.max_weight]
 
     def insert(self, item, weight=None):
-        r"""
+        """ insert an item into the sampling dict
+
+        Parameters
+        ----------
+        item : hashable
+            the ID of the item
+        weight : float, default: None
+            the weight of the item, if None, unweighted.
+
+        Notes
+        -----
         If not present, then inserts the thing (with weight if appropriate)
         if already there, replaces the weight unless weight is 0
 
         If weight is 0, then it removes the item and doesn't replace.
 
-        WARNING:
-            replaces weight if already present, does not increment weight.
-
-
+        replaces weight if already present, does not increment weight.
         """
+
         if self.__contains__(item):
             self.remove(item)
         if weight != 0:
             self.update(item, weight_increment=weight)
 
     def update(self, item, weight_increment=None):
-        r"""
-        If not present, then inserts the thing (with weight if appropriate)
+        """_summary_
+
+        Parameters
+        ----------
+        item : hashable
+            ID of the item
+        weight_increment : float, default: None
+            how much to increment the weight if weighted.
+
+        Raises
+        ------
+        Exception
+            if weighted and no weight increment specified.
+        
+        Notes
+        -----
+        If not present, then inserts the item (with weight if appropriate)
         if already there, increments weight
 
-        WARNING:
-            increments weight if already present, cannot overwrite weight.
+        increments weight if already present, cannot overwrite weight.
         """
         if (
             weight_increment is not None
@@ -197,7 +241,7 @@ class SamplingDict:
             return random.choice(self.items)
 
     def random_removal(self):
-        """uses other class methods to choose and then remove a random node"""
+        """uses other class methods to choose and then remove a random item"""
         choice = self.choose_random()
         self.remove(choice)
         return choice

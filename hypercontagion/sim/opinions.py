@@ -7,17 +7,25 @@ import random
 import numpy as np
 
 # built-in functions
-
-# discrete output
-def majority_rule(members, status):
-    return "under dev"
-
-
-def quorum(members, status, threshold=0.5):
-    return "under dev"
-
-
 def voter_model(node, edge, status, p_adoption=1):
+    """the voter model given a hyperedge
+
+    Parameters
+    ----------
+    node : hashable
+        node whose opinion may change
+    edge : iterable
+        a list of the members of a hyperedge. must include the node.
+    status : dict
+        keys are node IDs, statuses are values
+    p_adoption : float, default: 1
+        probability that the node will adopt the consensus.
+
+    Returns
+    -------
+    str
+        new node status
+    """
     neighbors = [n for n in edge if n != node]
     opinions = set(status[neighbors])  # get unique opinions
     if len(opinions) == 1:
@@ -28,19 +36,19 @@ def voter_model(node, edge, status, p_adoption=1):
 
 # continuous output
 def discordance(edge, status):
-    """Computes the discordance
+    """Computes the discordance of a hyperedge.
 
     Parameters
     ----------
-    edge : _type_
-        _description_
-    status : _type_
-        _description_
+    edge : tuple
+        a list of an edge's members
+    status : numpy array
+        opinions of the nodes
 
     Returns
     -------
-    _type_
-        _description_
+    float
+        discordance of the hyperedge
     """
     try:
         return (
@@ -53,25 +61,29 @@ def discordance(edge, status):
 
 
 def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
-    """_summary_
+    """ the deffuant weisbuch model for updating the statuses of nodes in an edge
 
     Parameters
     ----------
-    edge : _type_
-        _description_
-    status : _type_
-        _description_
-    epsilon : float, optional
-        _description_, by default 0.5
-    update : str, optional
-        _description_, by default "average"
-    m : float, optional
-        _description_, by default 0.1
+    edge : iterable
+        list of nodes
+    status : numpy array
+        node statuses
+    epsilon : float, default
+        confidence bound
+    update : str, default: "average"
+        if "average" the opinions of all nodes in the hyperedge
+        are updated to the average. If "cautious", the nodes are
+        moved toward the average.
+
+    m : float between 0 and 1, default: 0.1
+        the fraction of the possible distance to move the node opinions
+        to the centroid.
 
     Returns
     -------
-    _type_
-        _description_
+    iterable
+        the updated statuses
     """
     status = status.copy()
     if discordance(edge, status) < epsilon:
@@ -86,21 +98,21 @@ def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
 
 
 def hegselmann_krause(H, status, epsilon=0.1):
-    """_summary_
+    """The Hegselmann-Krause model.
 
     Parameters
     ----------
-    H : _type_
-        _description_
-    status : _type_
-        _description_
-    epsilon : float, optional
-        _description_, by default 0.1
+    H : xgi.Hypergraph
+        the hypergraph of interest
+    status : iterable
+        statuses of the nodes.
+    epsilon : float, default: 0.1
+        confidence bound
 
     Returns
     -------
-    _type_
-        _description_
+    iterable
+        new opinions
     """
     new_status = status.copy()
     for node in H.nodes:
@@ -121,27 +133,28 @@ def hegselmann_krause(H, status, epsilon=0.1):
 def simulate_random_group_continuous_state_1D(
     H, initial_states, function=deffuant_weisbuch, tmin=0, tmax=100, dt=1, **args
 ):
-    """_summary_
+    """Simulate an opinion formation process where states are continuous and
+    random groups are chosen.
 
     Parameters
     ----------
-    H : _type_
-        _description_
-    initial_states : _type_
-        _description_
-    function : _type_, optional
-        _description_, by default deffuant_weisbuch
-    tmin : int, optional
-        _description_, by default 0
-    tmax : int, optional
-        _description_, by default 100
-    dt : int, optional
-        _description_, by default 1
+    H : xgi.Hypergraph
+        the hypergraph of interest
+    initial_states : numpy array
+        initial node states
+    function : update function, default: deffuant_weisbuch
+        node update function
+    tmin : int, default: 0
+        the time at which the simulation starts
+    tmax : int, default: 100
+        the time at which the simulation terminates
+    dt : float > 0, default: 1
+        the time step to take.
 
     Returns
     -------
-    _type_
-        _description_
+    numpy array, numpy array
+        a 1D array of the times and a 2D array of the states.
     """
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
@@ -165,6 +178,28 @@ def simulate_random_group_continuous_state_1D(
 def simulate_random_node_and_group_discrete_state(
     H, initial_states, function=voter_model, tmin=0, tmax=100, dt=1, **args
 ):
+    """_summary_
+
+    Parameters
+    ----------
+    H : _type_
+        _description_
+    initial_states : _type_
+        _description_
+    function : _type_, optional
+        _description_, by default voter_model
+    tmin : int, optional
+        _description_, by default 0
+    tmax : int, optional
+        _description_, by default 100
+    dt : int, optional
+        _description_, by default 1
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
     states = np.empty((H.num_nodes, timesteps), dtype=object)
