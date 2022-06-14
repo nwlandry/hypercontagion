@@ -210,7 +210,7 @@ def simulate_random_node_and_group_discrete_state(
     while time <= tmax:
         time += dt
         step += 1
-        # randomly selct node
+        # randomly select node
         node = random.choice(list(H.nodes))
         # randomly select neighbors of the node
         edge = H.edges.members(random.choice(list(H.edges)))

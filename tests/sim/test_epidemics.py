@@ -175,7 +175,7 @@ def test_event_driven_SIR(edgelist1):
     tmax = 20
 
     gamma = 10
-    tau = {1: 10, 2: 10, 3: 10}
+    tau = {1: 100, 2: 100, 3: 100}
     t, S, I, R = hc.event_driven_SIR(
         H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, seed=0
     )
