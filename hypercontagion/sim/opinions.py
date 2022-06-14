@@ -178,27 +178,28 @@ def simulate_random_group_continuous_state_1D(
 def simulate_random_node_and_group_discrete_state(
     H, initial_states, function=voter_model, tmin=0, tmax=100, dt=1, **args
 ):
-    """_summary_
+    """Simulate an opinion formation process where states are discrete and
+    states are updated synchronously.
 
     Parameters
     ----------
-    H : _type_
-        _description_
-    initial_states : _type_
-        _description_
-    function : _type_, optional
-        _description_, by default voter_model
-    tmin : int, optional
-        _description_, by default 0
-    tmax : int, optional
-        _description_, by default 100
-    dt : int, optional
-        _description_, by default 1
+    H : xgi.Hypergraph
+        the hypergraph of interest
+    initial_states : numpy array
+        initial node states
+    function : update function, default: deffuant_weisbuch
+        node update function
+    tmin : int, default: 0
+        the time at which the simulation starts
+    tmax : int, default: 100
+        the time at which the simulation terminates
+    dt : float > 0, default: 1
+        the time step to take.
 
     Returns
     -------
-    _type_
-        _description_
+    numpy array, numpy array
+        a 1D array of the times and a 2D array of the states.
     """
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
@@ -224,27 +225,28 @@ def simulate_random_node_and_group_discrete_state(
 def synchronous_update_continuous_state_1D(
     H, initial_states, function=hegselmann_krause, tmin=0, tmax=100, dt=1, **args
 ):
-    """_summary_
+    """Simulate an opinion formation process where states are continuous and
+    states are updated synchronously.
 
     Parameters
     ----------
-    H : _type_
-        _description_
-    initial_states : _type_
-        _description_
-    function : _type_, optional
-        _description_, by default hegselmann_krause
-    tmin : int, optional
-        _description_, by default 0
-    tmax : int, optional
-        _description_, by default 100
-    dt : int, optional
-        _description_, by default 1
+    H : xgi.Hypergraph
+        the hypergraph of interest
+    initial_states : numpy array
+        initial node states
+    function : update function, default: deffuant_weisbuch
+        node update function
+    tmin : int, default: 0
+        the time at which the simulation starts
+    tmax : int, default: 100
+        the time at which the simulation terminates
+    dt : float > 0, default: 1
+        the time step to take.
 
     Returns
     -------
-    _type_
-        _description_
+    numpy array, numpy array
+        a 1D array of the times and a 2D array of the states.
     """
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2

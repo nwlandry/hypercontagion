@@ -1,20 +1,12 @@
-import random
-
+import hypercontagion as hc
 import numpy as np
 
-# built-in functions
-
-# discrete output
-def test_voter_model():
-    assert 0 == 0
-
-
-# continuous output
 def test_discordance():
-    assert 0 == 0
+    assert abs(hc.discordance(np.array([0, 1, 2]), np.array([1, 0, 0])) - 1/3) < 1e-6
+    assert abs(hc.discordance(np.array([0, 1, 2]), np.array([0, 0, 0])) - 0) < 1e-6
 
 
-def deffuant_weisbuch():
+def test_deffuant_weisbuch():
     assert 0 == 0
 
 
