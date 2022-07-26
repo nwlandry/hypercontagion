@@ -1,8 +1,10 @@
-import hypercontagion as hc
 import numpy as np
 
+import hypercontagion as hc
+
+
 def test_discordance():
-    assert abs(hc.discordance(np.array([0, 1, 2]), np.array([1, 0, 0])) - 1/3) < 1e-6
+    assert abs(hc.discordance(np.array([0, 1, 2]), np.array([1, 0, 0])) - 1 / 3) < 1e-6
     assert abs(hc.discordance(np.array([0, 1, 2]), np.array([0, 0, 0])) - 0) < 1e-6
 
 

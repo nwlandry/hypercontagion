@@ -6,6 +6,7 @@ import random
 
 import numpy as np
 
+
 # built-in functions
 def voter_model(node, edge, status, p_adoption=1):
     """the voter model given a hyperedge
@@ -61,7 +62,7 @@ def discordance(edge, status):
 
 
 def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
-    """ the deffuant weisbuch model for updating the statuses of nodes in an edge
+    """the deffuant weisbuch model for updating the statuses of nodes in an edge
 
     Parameters
     ----------
