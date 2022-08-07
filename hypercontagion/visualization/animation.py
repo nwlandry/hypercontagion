@@ -3,97 +3,52 @@ from collections import defaultdict
 import xgi
 from celluloid import Camera
 
+__all__ = ["contagion_animation"]
 
-def contagion_animation(
-    fig,
-    H,
-    transition_events,
-    node_state_color_dict,
-    edge_state_color_dict,
-    node_radius=1,
-    fps=1,
-):
-    """
-    A function to animate discrete-time contagion models for hypergraphs. Currently only supports a circular layout.
-    Parameters
-    ----------
-    fig : matplotlib Figure object
-    H : HyperNetX Hypergraph object
-    transition_events : dictionary
-        The dictionary that is output from the discrete_SIS and discrete_SIR functions with return_full_data=True
-    node_state_color_dict : dictionary
-        Dictionary which specifies the colors of each node state. All node states must be specified.
-    edge_state_color_dict : dictionary
-        Dictionary with keys that are edge states and values which specify the colors of each edge state
-        (can specify an alpha parameter). All edge-dependent transition states must be specified
-        (most common is "I") and there must be a a default "OFF" setting.
-    node_radius : float, default: 1
-        The radius of the nodes to draw
-    fps : int > 0, default: 1
-        Frames per second of the animation
-    Returns
-    -------
-    matplotlib Animation object
-    Notes
-    -----
-    Example::
-        >>> import hypernetx.algorithms.contagion as contagion
-        >>> import random
-        >>> import hypernetx as hnx
-        >>> import matplotlib.pyplot as plt
-        >>> from IPython.display import HTML
-        >>> n = 1000
-        >>> m = 10000
-        >>> hyperedgeList = [random.sample(range(n), k=random.choice([2,3])) for i in range(m)]
-        >>> H = hnx.Hypergraph(hyperedgeList)
-        >>> tau = {2:0.1, 3:0.1}
-        >>> gamma = 0.1
-        >>> tmax = 100
-        >>> dt = 0.1
-        >>> transition_events = contagion.discrete_SIS(H, tau, gamma, rho=0.1, tmin=0, tmax=tmax, dt=dt, return_full_data=True)
-        >>> node_state_color_dict = {"S":"green", "I":"red", "R":"blue"}
-        >>> edge_state_color_dict = {"S":(0, 1, 0, 0.3), "I":(1, 0, 0, 0.3), "R":(0, 0, 1, 0.3), "OFF": (1, 1, 1, 0)}
-        >>> fps = 1
-        >>> fig = plt.figure()
-        >>> animation = contagion.contagion_animation(fig, H, transition_events, node_state_color_dict, edge_state_color_dict, node_radius=1, fps=fps)
-        >>> HTML(animation.to_jshtml())
-    """
+
+def contagion_animation(fig, H, transition_events, pos, node_colors, edge_colors, dt=1, fps=1):
 
     node_state = defaultdict(lambda: "S")
 
     camera = Camera(fig)
 
-    for t in sorted(list(transition_events.keys())):
+    event_interval_list = get_events_in_equal_time_intervals(transition_events, dt)
+    for interval_time in event_interval_list:
+        events = event_interval_list[interval_time]
+
         edge_state = defaultdict(lambda: "OFF")
 
         # update edge and node states
-        for event in transition_events[t]:
-            status = event[0]
-            node = event[1]
-
+        for event in events:
+            status = event["new_state"]
+            source = event["source"]
+            target = event["target"]
+            if source is not None:
+                edge_state[source] = status
             # update node states
-            node_state[node] = status
+            node_state[target] = status
 
-            try:
-                # update the edge transmitters list if they are neighbor-dependent transitions
-                edgeID = event[2]
-                if edgeID is not None:
-                    edge_state[edgeID] = status
-            except:
-                pass
-
-        kwargs = {"layout_kwargs": {"seed": 39}}
-
-        node_fc = {n: node_state_color_dict[node_state[n]] for n in H.nodes}
-        edge_fc = {e: edge_state_color_dict[edge_state[e]] for e in H.edges}
+        node_fc = {n: node_colors[node_state[n]] for n in H.nodes}
+        edge_fc = {e: edge_colors[edge_state[e]] for e in H.edges}
 
         # draw hypergraph
-        xgi.draw(
-            H,
-            node_radius=node_radius,
-            node_fc=node_fc,
-            edge_fc=edge_fc,
-        )
+        # fig.set_title(f"Time is {interval_time}")
+        xgi.draw(H, pos=pos, node_fc=node_fc, edge_fc=edge_fc)
         camera.snap()
 
     return camera.animate(interval=1000 / fps)
+
+def get_events_in_equal_time_intervals(transition_events, dt):
+    tmin = transition_events[0]["time"]
+
+    new_events = defaultdict(list)
+
+    t = tmin
+    for event in transition_events:
+        if event["time"] < t + dt:
+            new_events[t].append(event)
+        else:
+            t += dt
+            new_events[t].append(event)
+
+    return new_events
