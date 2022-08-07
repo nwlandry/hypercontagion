@@ -1,12 +1,15 @@
 from collections import defaultdict
 
+import matplotlib.pyplot as plt
 import xgi
 from celluloid import Camera
 
 __all__ = ["contagion_animation"]
 
 
-def contagion_animation(fig, H, transition_events, pos, node_colors, edge_colors, dt=1, fps=1):
+def contagion_animation(
+    fig, H, transition_events, pos, node_colors, edge_colors, dt=1, fps=1
+):
 
     node_state = defaultdict(lambda: "S")
 
@@ -32,11 +35,12 @@ def contagion_animation(fig, H, transition_events, pos, node_colors, edge_colors
         edge_fc = {e: edge_colors[edge_state[e]] for e in H.edges}
 
         # draw hypergraph
-        # fig.set_title(f"Time is {interval_time}")
+        plt.title(f"Time is {interval_time}")
         xgi.draw(H, pos=pos, node_fc=node_fc, edge_fc=edge_fc)
         camera.snap()
 
     return camera.animate(interval=1000 / fps)
+
 
 def get_events_in_equal_time_intervals(transition_events, dt):
     tmin = transition_events[0]["time"]
