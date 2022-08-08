@@ -12,5 +12,4 @@ cff-version: "1.1.0"
 license: "BSD-3"
 message: "If you use this software, please cite it using these metadata."
 title: hypercontagion
-version: "0.1"
-...
+version: "0.1.1"

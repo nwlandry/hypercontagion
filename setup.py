@@ -3,7 +3,7 @@ import sys
 import setuptools
 from setuptools import setup
 
-__version__ = "0.1"
+__version__ = "0.1.1"
 
 if sys.version_info < (3, 7):
     sys.exit("hypercontagion requires Python 3.7 or later.")
