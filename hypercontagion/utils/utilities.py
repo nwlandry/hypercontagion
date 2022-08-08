@@ -45,7 +45,7 @@ class EventQueue:
         self.counter = 0  # tie-breaker for putting things in priority queue
 
     def add(self, time, function, args=()):
-        """ Add event to the queue.
+        """Add event to the queue.
 
         Parameters
         ----------
@@ -67,7 +67,7 @@ class EventQueue:
 
     def __len__(self):
         """this allows us to use commands like ``while Q:``
-        
+
         Returns
         -------
         int
@@ -106,7 +106,7 @@ class SamplingDict:
 
     def __len__(self):
         """Number of items in the dict
-        
+
         Returns
         -------
         int
@@ -127,7 +127,7 @@ class SamplingDict:
         self.max_weight_count = C[self.max_weight]
 
     def insert(self, item, weight=None):
-        """ insert an item into the sampling dict
+        """insert an item into the sampling dict
 
         Parameters
         ----------
@@ -165,7 +165,7 @@ class SamplingDict:
         ------
         Exception
             if weighted and no weight increment specified.
-        
+
         Notes
         -----
         If not present, then inserts the item (with weight if appropriate)

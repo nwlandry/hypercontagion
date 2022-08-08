@@ -8,8 +8,13 @@ import numpy as np
 import xgi
 
 from ..exception import HyperContagionError
-from ..utils import EventQueue, SamplingDict
-from ..utils import _process_trans_SIR_, _process_trans_SIS_, py_random_state
+from ..utils import (
+    EventQueue,
+    SamplingDict,
+    _process_trans_SIR_,
+    _process_trans_SIS_,
+    py_random_state,
+)
 from .functions import majority_vote, threshold
 
 
