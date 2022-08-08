@@ -188,7 +188,7 @@ def test_event_driven_SIR(edgelist1):
 
     gamma = 0
     t, S, I, R = hc.event_driven_SIR(
-        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=tmax, seed=0
+        H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=100, seed=0
     )
 
     assert np.all(S + I + R == H.num_nodes)
