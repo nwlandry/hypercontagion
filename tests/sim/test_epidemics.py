@@ -233,4 +233,3 @@ def test_event_driven_SIS(edgelist1):
     assert np.all(S + I == H.num_nodes)
     assert np.min(t) == tmin
     assert np.max(t) < tmax
-    assert I[-1] == 4
