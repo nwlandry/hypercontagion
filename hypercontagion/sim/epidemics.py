@@ -2,23 +2,17 @@
 Classic epidemiological models extended to higher-order contagion.
 """
 
+import random
 from collections import defaultdict
 
 import numpy as np
 import xgi
 
 from ..exception import HyperContagionError
-from ..utils import (
-    EventQueue,
-    SamplingDict,
-    _process_trans_SIR_,
-    _process_trans_SIS_,
-    py_random_state,
-)
+from ..utils import EventQueue, SamplingDict, _process_trans_SIR_, _process_trans_SIS_
 from .functions import majority_vote, threshold
 
 
-@py_random_state("seed")
 def discrete_SIR(
     H,
     tau,
@@ -81,6 +75,8 @@ def discrete_SIR(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+    if seed is not None:
+        random.seed(seed)
     members = H.edges.members(dtype=dict)
     memberships = H.nodes.memberships()
 
@@ -95,7 +91,7 @@ def discrete_SIR(
             initial_number = 1
         else:
             initial_number = int(round(H.num_nodes * rho))
-        initial_infecteds = seed.sample(list(H.nodes), initial_number)
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
         initial_recovereds = []
@@ -179,7 +175,7 @@ def discrete_SIR(
         for node in H.nodes:
             if status[node] == "I":
                 # heal
-                if seed.random() <= gamma * dt * nodeweight(node):
+                if random.random() <= gamma * dt * nodeweight(node):
                     new_status[node] = "R"
                     R[-1] += 1
                     I[-1] += -1
@@ -201,7 +197,7 @@ def discrete_SIR(
                 for edge_id in memberships[node]:
                     edge = members[edge_id]
                     if tau[len(edge)] > 0:
-                        if seed.random() <= tau[len(edge)] * transmission_function(
+                        if random.random() <= tau[len(edge)] * transmission_function(
                             node, status, edge, **args
                         ) * dt * edgeweight(edge_id):
                             new_status[node] = "I"
@@ -230,7 +226,6 @@ def discrete_SIR(
         return np.array(times), np.array(S), np.array(I), np.array(R)
 
 
-@py_random_state("seed")
 def discrete_SIS(
     H,
     tau,
@@ -293,6 +288,9 @@ def discrete_SIS(
         If the user specifies both rho and initial_infecteds.
     """
 
+    if seed is not None:
+        random.seed(seed)
+
     members = H.edges.members(dtype=dict)
     memberships = H.nodes.memberships()
 
@@ -307,7 +305,7 @@ def discrete_SIS(
             initial_number = 1
         else:
             initial_number = int(round(H.num_nodes * rho))
-        initial_infecteds = seed.sample(list(H.nodes), initial_number)
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if transmission_weight is not None:
 
@@ -369,7 +367,7 @@ def discrete_SIS(
         for node in H.nodes:
             if status[node] == "I":
                 # heal
-                if seed.random() <= gamma * dt * nodeweight(node):
+                if random.random() <= gamma * dt * nodeweight(node):
                     new_status[node] = "S"
                     S[-1] += 1
                     I[-1] += -1
@@ -391,7 +389,7 @@ def discrete_SIS(
                 for edge_id in memberships[node]:
                     edge = members[edge_id]
                     if tau[len(edge)] > 0:
-                        if seed.random() <= tau[len(edge)] * transmission_function(
+                        if random.random() <= tau[len(edge)] * transmission_function(
                             node, status, edge, **args
                         ) * dt * edgeweight(edge_id):
                             new_status[node] = "I"
@@ -420,7 +418,6 @@ def discrete_SIS(
         return np.array(times), np.array(S), np.array(I)
 
 
-@py_random_state("seed")
 def Gillespie_SIR(
     H,
     tau,
@@ -480,6 +477,8 @@ def Gillespie_SIR(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+    if seed is not None:
+        random.seed(seed)
 
     members = H.edges.members(dtype=dict)
     memberships = H.nodes.memberships()
@@ -515,7 +514,7 @@ def Gillespie_SIR(
             initial_number = 1
         else:
             initial_number = int(round(H.num_nodes * rho))
-        initial_infecteds = seed.sample(list(H.nodes), initial_number)
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
         initial_recovereds = []
@@ -604,7 +603,7 @@ def Gillespie_SIR(
     total_rate = sum(total_rates.values())
 
     if total_rate > 0:
-        delay = seed.expovariate(total_rate)
+        delay = random.expovariate(total_rate)
     else:
         print("Total rate is zero and no events will happen!")
         delay = float("Inf")
@@ -613,10 +612,10 @@ def Gillespie_SIR(
 
     while infecteds and t < tmax:
         while True:
-            choice = seed.choice(
+            choice = random.choice(
                 list(total_rates.keys())
             )  # Is there a faster way to do this?
-            if seed.random() < total_rates[choice] / total_rate:
+            if random.random() < total_rates[choice] / total_rate:
                 break
         if choice == 0:  # recover
             # does weighted choice and removes it
@@ -698,7 +697,7 @@ def Gillespie_SIR(
 
         total_rate = sum(total_rates.values())
         if total_rate > 0:
-            delay = seed.expovariate(total_rate)
+            delay = random.expovariate(total_rate)
         else:
             delay = float("Inf")
         t += delay
@@ -709,7 +708,6 @@ def Gillespie_SIR(
         return np.array(times), np.array(S), np.array(I), np.array(R)
 
 
-@py_random_state("seed")
 def Gillespie_SIS(
     H,
     tau,
@@ -768,6 +766,8 @@ def Gillespie_SIS(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+    if seed is not None:
+        random.seed(seed)
 
     members = H.edges.members(dtype=dict)
     memberships = H.nodes.memberships()
@@ -803,7 +803,7 @@ def Gillespie_SIS(
             initial_number = 1
         else:
             initial_number = int(round(H.num_nodes * rho))
-        initial_infecteds = seed.sample(list(H.nodes), initial_number)
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     I = [len(initial_infecteds)]
     S = [H.num_nodes - I[0]]
@@ -854,7 +854,9 @@ def Gillespie_SIS(
 
     for node in initial_infecteds:
         infecteds.update(node, weight_increment=nodeweight(node))
-        for edge_id in memberships[node]:  # must have this in a separate loop after assigning status of node
+        for edge_id in memberships[
+            node
+        ]:  # must have this in a separate loop after assigning status of node
             # handle weighted vs. unweighted?
             edge = members[edge_id]
             for nbr in edge:  # there may be self-loops so account for this later
@@ -873,7 +875,7 @@ def Gillespie_SIS(
 
     total_rate = sum(total_rates.values())
     if total_rate > 0:
-        delay = seed.expovariate(total_rate)
+        delay = random.expovariate(total_rate)
     else:
         print("Total rate is zero and no events will happen!")
         delay = float("Inf")
@@ -883,8 +885,8 @@ def Gillespie_SIS(
     while infecteds and t < tmax:
         # rejection sampling
         while True:
-            choice = seed.choice(list(total_rates.keys()))
-            if seed.random() < total_rates[choice] / total_rate:
+            choice = random.choice(list(total_rates.keys()))
+            if random.random() < total_rates[choice] / total_rate:
                 break
 
         if choice == 0:  # recover
@@ -972,7 +974,7 @@ def Gillespie_SIS(
             total_rates[size] = tau[size] * IS_links[size].total_weight()
         total_rate = sum(total_rates.values())
         if total_rate > 0:
-            delay = seed.expovariate(total_rate)
+            delay = random.expovariate(total_rate)
         else:
             delay = float("Inf")
         t += delay
@@ -983,7 +985,6 @@ def Gillespie_SIS(
         return np.array(times), np.array(S), np.array(I)
 
 
-@py_random_state("seed")
 def event_driven_SIR(
     H,
     tau,
@@ -1039,6 +1040,8 @@ def event_driven_SIR(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+    if seed is not None:
+        random.seed(seed)
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -1066,7 +1069,7 @@ def event_driven_SIR(
             initial_number = 1
         else:
             initial_number = int(round(H.num_nodes * rho))
-        initial_infecteds = seed.sample(list(H.nodes), initial_number)
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     if initial_recovereds is None:
         initial_recovereds = []
@@ -1113,7 +1116,6 @@ def event_driven_SIR(
         return np.array(times), np.array(S), np.array(I), np.array(R)
 
 
-@py_random_state("seed")
 def event_driven_SIS(
     H,
     tau,
@@ -1168,6 +1170,9 @@ def event_driven_SIS(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+    if seed is not None:
+        random.seed(seed)
+
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
@@ -1188,7 +1193,7 @@ def event_driven_SIS(
             initial_number = 1
         else:
             initial_number = int(round(H.num_nodes * rho))
-        initial_infecteds = seed.sample(list(H.nodes), initial_number)
+        initial_infecteds = random.sample(list(H.nodes), initial_number)
 
     I = [0]
     S = [H.num_nodes]

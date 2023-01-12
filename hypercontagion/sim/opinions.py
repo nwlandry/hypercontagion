@@ -53,11 +53,7 @@ def discordance(edge, status):
     """
     try:
         e = list(edge)
-        return (
-            1
-            / (len(e) - 1)
-            * np.sum(np.power(status[e] - np.mean(status[e]), 2))
-        )
+        return 1 / (len(e) - 1) * np.sum(np.power(status[e] - np.mean(status[e]), 2))
     except ZeroDivisionError:
         return float("Inf")  # handles singleton edges
 
@@ -120,7 +116,7 @@ def hegselmann_krause(H, status, epsilon=0.1):
 
     members = H.edges.members(dtype=dict)
     memberships = H.nodes.memberships()
-    
+
     new_status = status.copy()
     for node in H.nodes:
         new_status[node] = 0
