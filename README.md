@@ -18,7 +18,7 @@ HyperContagion is a Python package for the simulation and visualization of conta
   - [Other Resources](#other-resources)
 
 ## Installation
-HyperContagion runs on Python 3.7 or higher.
+HyperContagion runs on Python 3.8 or higher.
 
 To install the latest version of HyperContagion, run the following command:
 ```sh

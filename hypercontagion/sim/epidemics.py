@@ -81,6 +81,8 @@ def discrete_SIR(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+    members = H.edges.members(dtype=dict)
+    memberships = H.nodes.memberships()
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -196,8 +198,8 @@ def discrete_SIR(
                     new_status[node] = "I"
             elif status[node] == "S":
                 # infect by neighbors of all sizes
-                for edge_id in H.nodes.memberships(node):
-                    edge = H.edges.members(edge_id)
+                for edge_id in memberships[node]:
+                    edge = members[edge_id]
                     if tau[len(edge)] > 0:
                         if seed.random() <= tau[len(edge)] * transmission_function(
                             node, status, edge, **args
@@ -291,6 +293,9 @@ def discrete_SIS(
         If the user specifies both rho and initial_infecteds.
     """
 
+    members = H.edges.members(dtype=dict)
+    memberships = H.nodes.memberships()
+
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
@@ -383,8 +388,8 @@ def discrete_SIS(
                     new_status[node] = "I"
             else:
                 # infect by neighbors of all sizes
-                for edge_id in H.nodes.memberships(node):
-                    edge = H.edges.members(edge_id)
+                for edge_id in memberships[node]:
+                    edge = members[edge_id]
                     if tau[len(edge)] > 0:
                         if seed.random() <= tau[len(edge)] * transmission_function(
                             node, status, edge, **args
@@ -475,6 +480,9 @@ def Gillespie_SIR(
     HyperContagionError
         If the user specifies both rho and initial_infecteds.
     """
+
+    members = H.edges.members(dtype=dict)
+    memberships = H.nodes.memberships()
 
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
@@ -577,8 +585,8 @@ def Gillespie_SIR(
 
     for node in initial_infecteds:
         infecteds.update(node, weight_increment=nodeweight(node))
-        for edge_id in H.nodes.memberships(node):
-            edge = H.edges.members(edge_id)
+        for edge_id in memberships[node]:
+            edge = members[edge_id]
             for nbr in edge:
                 if status[nbr] == "S":
                     contagion = transmission_function(nbr, status, edge, **args)
@@ -626,8 +634,8 @@ def Gillespie_SIR(
                     }
                 )
 
-            for edge_id in H.nodes.memberships(recovering_node):
-                edge = H.edges.members(edge_id)
+            for edge_id in memberships[recovering_node]:
+                edge = members[edge_id]
                 for nbr in edge:
                     if status[nbr] == "S" and (edge_id, nbr) in IS_links[len(edge)]:
                         contagion = transmission_function(nbr, status, edge, **args)
@@ -660,14 +668,14 @@ def Gillespie_SIR(
                     }
                 )
 
-            for edge_id in H.nodes.memberships(recipient):
+            for edge_id in memberships[recipient]:
                 try:
-                    IS_links[len(H.edges.members(edge_id))].remove((edge_id, recipient))
+                    IS_links[len(members[edge_id])].remove((edge_id, recipient))
                 except:
                     pass
 
-            for edge_id in H.nodes.memberships(recipient):
-                edge = H.edges.members(edge_id)
+            for edge_id in memberships[recipient]:
+                edge = members[edge_id]
                 for nbr in edge:
                     if status[nbr] == "S":
                         contagion = transmission_function(nbr, status, edge, **args)
@@ -761,6 +769,9 @@ def Gillespie_SIS(
         If the user specifies both rho and initial_infecteds.
     """
 
+    members = H.edges.members(dtype=dict)
+    memberships = H.nodes.memberships()
+
     if rho is not None and initial_infecteds is not None:
         raise HyperContagionError("cannot define both initial_infecteds and rho")
 
@@ -843,11 +854,9 @@ def Gillespie_SIS(
 
     for node in initial_infecteds:
         infecteds.update(node, weight_increment=nodeweight(node))
-        for edge_id in H.nodes.memberships(
-            node
-        ):  # must have this in a separate loop after assigning status of node
+        for edge_id in memberships[node]:  # must have this in a separate loop after assigning status of node
             # handle weighted vs. unweighted?
-            edge = H.edges.members(edge_id)
+            edge = members[edge_id]
             for nbr in edge:  # there may be self-loops so account for this later
                 if status[nbr] == "S":
                     contagion = transmission_function(nbr, status, edge, **args)
@@ -896,8 +905,8 @@ def Gillespie_SIS(
                 )
 
             # Find the SI links for the recovered node to get reinfected
-            for edge_id in H.nodes.memberships(recovering_node):
-                edge = H.edges.members(edge_id)
+            for edge_id in memberships[recovering_node]:
+                edge = members[edge_id]
                 contagion = transmission_function(recovering_node, status, edge, **args)
                 if contagion != 0:
                     IS_links[len(edge)].update(
@@ -906,8 +915,8 @@ def Gillespie_SIS(
                     )
 
             # reduce the number of infected links because of the healing
-            for edge_id in H.nodes.memberships(recovering_node):
-                edge = H.edges.members(edge_id)
+            for edge_id in memberships[recovering_node]:
+                edge = members[edge_id]
                 for nbr in edge:
                     # if the key doesn't exist, don't attempt to remove it
                     if status[nbr] == "S" and (edge_id, nbr) in IS_links[len(edge)]:
@@ -938,14 +947,14 @@ def Gillespie_SIS(
                     }
                 )
 
-            for edge_id in H.nodes.memberships(recipient):
+            for edge_id in memberships[recipient]:
                 try:
-                    IS_links[len(H.edges.members(edge_id))].remove((edge_id, recipient))
+                    IS_links[len(members[edge_id])].remove((edge_id, recipient))
                 except:
                     pass
 
-            for edge_id in H.nodes.memberships(recipient):
-                edge = H.edges.members(edge_id)
+            for edge_id in memberships[recipient]:
+                edge = members[edge_id]
                 for nbr in edge:
                     if status[nbr] == "S":
                         contagion = transmission_function(nbr, status, edge, **args)

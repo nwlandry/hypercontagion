@@ -213,7 +213,7 @@ def test_event_driven_SIS(edgelist1):
     tmin = 10
     tmax = 20
 
-    gamma = 10
+    gamma = 1000
     tau = {1: 0, 2: 0, 3: 0}
     t, S, I = hc.event_driven_SIS(
         H, tau, gamma, initial_infecteds=[4], tmin=tmin, tmax=tmax, seed=0
@@ -225,7 +225,7 @@ def test_event_driven_SIS(edgelist1):
     assert I[-1] == 0
 
     gamma = 0
-    tau = {1: 10, 2: 10, 3: 10}
+    tau = {1: 100, 2: 100, 3: 100}
     t, S, I = hc.event_driven_SIS(
         H, tau, gamma, initial_infecteds=[6], tmin=tmin, tmax=100, seed=0
     )
