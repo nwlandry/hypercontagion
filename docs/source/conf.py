@@ -25,7 +25,7 @@ copyright = "Copyright (C) 2021 HyperContagion Developers"
 author = "Nicholas W. Landry and Joel C. Miller"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.1"
+release = "0.1.2"
 
 # -- General configuration ---------------------------------------------------
 
