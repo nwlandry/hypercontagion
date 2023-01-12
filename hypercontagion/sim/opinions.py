@@ -52,10 +52,11 @@ def discordance(edge, status):
         discordance of the hyperedge
     """
     try:
+        e = list(edge)
         return (
             1
-            / (len(edge) - 1)
-            * np.sum(np.power(status[edge] - np.mean(status[edge]), 2))
+            / (len(e) - 1)
+            * np.sum(np.power(status[e] - np.mean(status[e]), 2))
         )
     except ZeroDivisionError:
         return float("Inf")  # handles singleton edges
@@ -87,12 +88,13 @@ def deffuant_weisbuch(edge, status, epsilon=0.5, update="average", m=0.1):
         the updated statuses
     """
     status = status.copy()
-    if discordance(edge, status) < epsilon:
+    e = list(edge)
+    if discordance(e, status) < epsilon:
         if update == "average":
-            status[edge] = np.mean(status[edge])
+            status[e] = np.mean(status[e])
             return status
         elif update == "cautious":
-            status[edge] = status[edge] + m * (np.mean(status[edge]) - status[edge])
+            status[e] = status[e] + m * (np.mean(status[e]) - status[e])
             return status
     else:
         return status
@@ -157,6 +159,8 @@ def simulate_random_group_continuous_state_1D(
     numpy array, numpy array
         a 1D array of the times and a 2D array of the states.
     """
+    members = H.edges.members(dtype=dict)
+
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
     states = np.empty((H.num_nodes, timesteps))
@@ -168,7 +172,7 @@ def simulate_random_group_continuous_state_1D(
         time += dt
         step += 1
         # randomly select hyperedge
-        edge = H.edges.members(random.choice(list(H.edges)))
+        edge = members[random.choice(list(members))]
 
         states[:, step] = function(edge, states[:, step - 1], **args)
         times[step] = time
@@ -202,6 +206,7 @@ def simulate_random_node_and_group_discrete_state(
     numpy array, numpy array
         a 1D array of the times and a 2D array of the states.
     """
+    members = H.edges.members(dtype=dict)
     time = tmin
     timesteps = int((tmax - tmin) / dt) + 2
     states = np.empty((H.num_nodes, timesteps), dtype=object)
@@ -215,7 +220,7 @@ def simulate_random_node_and_group_discrete_state(
         # randomly select node
         node = random.choice(list(H.nodes))
         # randomly select neighbors of the node
-        edge = H.edges.members(random.choice(list(H.edges)))
+        edge = members[random.choice(list(members))]
 
         states[:, step] = function(node, edge, states[:, step - 1], **args)
         times[step] = time
