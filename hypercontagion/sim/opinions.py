@@ -117,12 +117,16 @@ def hegselmann_krause(H, status, epsilon=0.1):
     iterable
         new opinions
     """
+
+    members = H.edges.members(dtype=dict)
+    memberships = H.nodes.memberships()
+    
     new_status = status.copy()
     for node in H.nodes:
         new_status[node] = 0
         numberOfLikeMinded = 0
-        for edge_id in H.nodes.memberships(node):
-            edge = H.edges.members(edge_id)
+        for edge_id in memberships[node]:
+            edge = list(members[edge_id])
             if discordance(edge, status) < epsilon:
                 new_status[node] += np.mean(status[edge])
                 numberOfLikeMinded += 1
