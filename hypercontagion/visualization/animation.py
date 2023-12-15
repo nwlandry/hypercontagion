@@ -8,7 +8,7 @@ __all__ = ["contagion_animation"]
 
 
 def contagion_animation(
-    fig, H, transition_events, pos, node_colors, edge_colors, dt=1, fps=1
+    fig, H, transition_events, pos, node_colors, edge_colors, dt=1, fps=1, **args
 ):
     """Generate an animation object of contagion process.
 
@@ -30,6 +30,8 @@ def contagion_animation(
         the timestep at which to take snapshots of the system states
     fps : int, default: 1
         frames per second in the animation.
+    **args :
+        optional xgi draw args
 
     Returns
     -------
@@ -58,11 +60,18 @@ def contagion_animation(
             node_state[target] = status
 
         node_fc = {n: node_colors[node_state[n]] for n in H.nodes}
-        edge_fc = {e: edge_colors[edge_state[e]] for e in H.edges}
+        dyad_color = {
+            e: edge_colors[edge_state[e]] for e in H.edges.filterby("size", 2)
+        }
+        edge_fc = {
+            e: edge_colors[edge_state[e]] for e in H.edges.filterby("size", 2, "geq")
+        }
 
         # draw hypergraph
-        plt.title(f"Time is {interval_time}")
-        xgi.draw(H, pos=pos, node_fc=node_fc, edge_fc=edge_fc)
+        xgi.draw(
+            H, pos=pos, node_fc=node_fc, edge_fc=edge_fc, dyad_color=dyad_color, **args
+        )
+        plt.tight_layout()
         camera.snap()
 
     return camera.animate(interval=1000 / fps)

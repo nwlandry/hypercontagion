@@ -140,3 +140,4 @@ cython_debug/
 
 Figures/
 test.*
+.DS_Store
